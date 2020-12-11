@@ -1,3 +1,4 @@
+#include "asset/asset-cam.h"
 #include "asset/asset-db.h"
 #include "asset/asset-manager.h"
 #include "asset/db.h"
@@ -5,7 +6,7 @@
 #include "asset/json.h"
 #include <fty_asset_activator.h>
 #include <fty_common_asset_types.h>
-
+#include <fty_security_wallet.h>
 
 namespace fty::asset {
 
@@ -275,6 +276,17 @@ AssetExpected<db::AssetElement> AssetManager::deleteDevice(const db::AssetElemen
             logError("Error during asset deactivation - {}", e.what());
             return unexpected(e.what());
         }
+    }
+
+    // remove CAM mappings
+    try {
+        cam::Accessor camAccessor(CAM_CLIENT_ID, CAM_TIMEOUT_MS, MALAMUTE_ENDPOINT);
+        auto mappings = camAccessor.getAssetMappings(element.name);
+        for(const auto& m : mappings) {
+            camAccessor.removeMapping(m.m_assetId, CAM_SERVICE_ID, m.m_protocol);
+        }
+    } catch (const std::exception& e) {
+        log_error("Failed to update CAM: %s", e.what());
     }
 
     if (auto ret = db::deleteAssetElementFromAssetGroups(conn, element.id); !ret) {
