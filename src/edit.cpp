@@ -3,6 +3,7 @@
 #include "asset/asset-import.h"
 #include "asset/asset-manager.h"
 #include "asset/csv.h"
+#include "asset/asset/asset-cam.h"
 #include "asset/logger.h"
 #include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
@@ -11,6 +12,7 @@
 #include <fty_common_asset.h>
 #include <fty_common_asset_types.h>
 #include <fty_common_mlm.h>
+#include <fty_security_wallet.h>
 
 namespace fty::asset {
 
@@ -142,6 +144,23 @@ unsigned Edit::run()
         }
     } else {
         throw rest::errors::Internal(res.error());
+    }
+
+    try {
+        ExtMap map;
+        si >>= map;
+
+        std::string itemName;
+        si.getMember("name", itemName);
+
+        auto credentialList = getCredentialMappings(map);
+
+        cam::Accessor camAccessor(CAM_CLIENT_ID, CAM_TIMEOUT_MS, MALAMUTE_ENDPOINT);
+        for(const auto& c :credentialList) {
+            camAccessor.createMapping(itemName, CAM_SERVICE_ID, c.protocol, 0, c.credentialId, cam::Status::UNKNOWN /*, empty map */);
+        }
+    } catch (const std::exception& e) {
+        log_error("Failed to update CAM: %s", e.what());
     }
 }
 
