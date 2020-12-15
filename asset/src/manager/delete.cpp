@@ -102,20 +102,51 @@ AssetExpected<db::AssetElement> AssetManager::deleteAsset(const db::AssetElement
         return unexpected("a logical_asset (sensor) refers to it"_tr);
     }
 
-    switch (asset.typeId) {
-        case persist::asset_type::DATACENTER:
-        case persist::asset_type::ROW:
-        case persist::asset_type::ROOM:
-        case persist::asset_type::RACK:
-            return deleteDcRoomRowRack(asset);
-        case persist::asset_type::GROUP:
-            return deleteGroup(asset);
-        case persist::asset_type::DEVICE: {
-            return deleteDevice(asset);
+    // make the device inactive first
+    if (asset.status == "active") {
+        std::string asset_json = getJsonAsset(asset.id);
+
+        try {
+            mlm::MlmSyncClient  client(AGENT_FTY_ASSET, AGENT_ASSET_ACTIVATOR);
+            fty::AssetActivator activationAccessor(client);
+            activationAccessor.deactivate(asset_json);
+        } catch (const std::exception& e) {
+            logError("Error during asset deactivation - {}", e.what());
+            return unexpected(e.what());
         }
     }
-    logError("unknown type");
-    return unexpected("unknown type"_tr);
+
+    AssetExpected<db::AssetElement> ret = [&]() {
+
+        switch (asset.typeId) {
+            case persist::asset_type::DATACENTER:
+            case persist::asset_type::ROW:
+            case persist::asset_type::ROOM:
+            case persist::asset_type::RACK:
+                return deleteDcRoomRowRack(asset);
+            case persist::asset_type::GROUP:
+            return deleteGroup(asset);
+            case persist::asset_type::DEVICE: {
+                return deleteDevice(asset);
+            }
+        }
+        
+        logError("unknown type");
+        return unexpected("unknown type"_tr);
+    };
+
+    //in case of error we need to try to activate the asset again.
+    if (!ret && asset.status == "active") {
+        try {
+            mlm::MlmSyncClient  client(AGENT_FTY_ASSET, AGENT_ASSET_ACTIVATOR);
+            fty::AssetActivator activationAccessor(client);
+            activationAccessor.activate(asset_json);
+        } catch (const std::exception& e) {
+            logError("Error during asset activation - {}", e.what());
+        }
+    }
+
+    return ret;
 }
 
 std::map<std::string, AssetExpected<db::AssetElement>> AssetManager::deleteAsset(const std::map<uint32_t, std::string>& ids)
@@ -263,20 +294,6 @@ AssetExpected<db::AssetElement> AssetManager::deleteDevice(const db::AssetElemen
 {
     tnt::Connection  conn;
     tnt::Transaction trans(conn);
-
-    // make the device inactive first
-    if (element.status == "active") {
-        std::string asset_json = getJsonAsset(element.id);
-
-        try {
-            mlm::MlmSyncClient  client(AGENT_FTY_ASSET, AGENT_ASSET_ACTIVATOR);
-            fty::AssetActivator activationAccessor(client);
-            activationAccessor.deactivate(asset_json);
-        } catch (const std::exception& e) {
-            logError("Error during asset deactivation - {}", e.what());
-            return unexpected(e.what());
-        }
-    }
 
     // remove CAM mappings
     try {
