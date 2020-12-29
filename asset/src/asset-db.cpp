@@ -1038,10 +1038,11 @@ Expected<std::vector<DbAssetLink>> selectAssetDeviceLinksTo(uint32_t elementId, 
 
         for (const auto& row : rows) {
             DbAssetLink link;
+            link.destId = elementId;
             row.get("id_asset_element_src", link.srcId);
             row.get("src_out", link.srcSocket);
-            row.get("dest_in", link.destId);
-            row.get("src_name", link.destSocket);
+            row.get("dest_in", link.destSocket);
+            row.get("src_name", link.srcName);
 
             ret.push_back(link);
         }
