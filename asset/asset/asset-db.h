@@ -102,17 +102,17 @@ Expected<int64_t> extNameToAssetId(const std::string& assetExtName); //!test
 
 /// select basic information about asset element by name
 /// @param name asset internal or external name
-/// @return @ref AssetElement or error
+/// @return AssetElement or error
 Expected<AssetElement> selectAssetElementByName(const std::string& name);  //!test
 
 /// Selects all data about asset in WebAssetElement
 /// @param elementId asset element id
-/// @return @ref WebAssetElement or error
+/// @return WebAssetElement or error
 Expected<WebAssetElement> selectAssetElementWebById(uint32_t elementId); //!test
 
 /// Selects all data about asset in WebAssetElement
 /// @param elementId asset element id
-/// @param asset @ref WebAssetElement to select to
+/// @param asset WebAssetElement to select to
 /// @return nothing or error
 Expected<void> selectAssetElementWebById(uint32_t elementId, WebAssetElement& asset); //!test
 

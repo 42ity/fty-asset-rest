@@ -178,7 +178,7 @@ AssetExpected<std::string> AssetManager::exportCsv(const std::optional<db::Asset
             if (i >= power_links->size()) {
                 // nothing here, exists only for consistency reasons
             } else {
-                auto rv = db::nameToExtName(power_links->at(i).destSocket);
+                auto rv = db::nameToExtName(power_links->at(i).srcName);
                 if (!rv) {
                     return unexpected(rv.error());
                 }
