@@ -536,7 +536,7 @@ static std::string createAssetName(tnt::Connection& conn, uint32_t typeId, uint3
     unsigned retry = 0;
 
     while(!valid && (retry++ < MAX_CREATE_RETRY)) {
-        gettimeofday(&t, NULL);
+        gettimeofday(&t, nullptr);
         srand(static_cast<unsigned int>(t.tv_sec * t.tv_usec));
         // generate 8 digit random integer
         unsigned long index = static_cast<unsigned long>(rand()) % static_cast<unsigned long>(100000000);

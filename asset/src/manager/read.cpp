@@ -108,7 +108,7 @@ AssetExpected<db::WebAssetElementExt> AssetManager::getItem(uint32_t id)
 
         el.parents = getParents(id);
 
-        return el;
+        return std::move(el);
     } catch (const std::exception& e) {
         return unexpected(e.what());
     }

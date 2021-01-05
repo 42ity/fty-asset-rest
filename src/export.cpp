@@ -5,6 +5,7 @@
 #include <fty/rest/component.h>
 #include <fty_common_asset_types.h>
 #include <regex>
+#include <iomanip>
 
 namespace fty::asset {
 
@@ -16,7 +17,7 @@ unsigned Export::run()
     }
 
     auto                            dc = m_request.queryArg<std::string>("dc");
-    std::optional<db::AssetElement> dcAsset;
+    std::optional<db::AssetElement> dcAsset = std::nullopt;
     if (dc) {
         auto asset = db::selectAssetElementByName(*dc);
         if (!asset || asset->typeId != persist::type_to_typeid("datacenter")) {
@@ -27,8 +28,9 @@ unsigned Export::run()
 
     auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-    std::string strTime(30, '\0');
-    std::strftime(&strTime[0], strTime.size(), "%Y-%m-%d%H-%M-%S%TZ", std::localtime(&time));
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&time), "%FT%TZ");
+    std::string strTime = std::regex_replace(ss.str(), std::regex(":"), "-");
 
     if (dcAsset != std::nullopt) {
         auto dcENameRet = db::idToNameExtName(dcAsset->id);
@@ -41,7 +43,7 @@ unsigned Export::run()
             "attachment; filename=\"asset_export_" + dcEName + "_" + strTime + ".csv\"");
     } else {
         m_reply.setHeader(
-            tnt::httpheader::contentDisposition, "attachment; filename=\"asset_export" + strTime + ".csv\"");
+            tnt::httpheader::contentDisposition, "attachment; filename=\"asset_export_" + strTime + ".csv\"");
     }
 
     auto ret = AssetManager::exportCsv(dcAsset);

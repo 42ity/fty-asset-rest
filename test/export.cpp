@@ -16,5 +16,16 @@ TEST_CASE("Export asset")
         deleteAsset(el);
     }
 
+    SECTION("Export 2")
+    {
+        fty::asset::db::AssetElement el = createAsset("device", "Device name", "device", dc.id);
+        auto exp = fty::asset::AssetManager::exportCsv(dc);
+        if (!exp) {
+            FAIL(exp.error());
+        }
+        std::cerr << *exp << std::endl;
+        deleteAsset(el);
+    }
+
     deleteAsset(dc);
 }
