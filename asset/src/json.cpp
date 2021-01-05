@@ -227,7 +227,7 @@ std::string getJsonAsset(uint32_t elemId)
     std::vector<std::string>      macs;
     std::vector<std::string>      fqdns;
     std::vector<std::string>      hostnames;
-    if (!tmp->ext.empty()) {
+    if (!tmp->extAttributes.empty()) {
         cxxtools::Regex r_outlet_label("^outlet\\.[0-9][0-9]*\\.label$");
         cxxtools::Regex r_outlet_group("^outlet\\.[0-9][0-9]*\\.group$");
         cxxtools::Regex r_outlet_type("^outlet\\.[0-9][0-9]*\\.type$");
