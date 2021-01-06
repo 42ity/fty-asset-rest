@@ -524,18 +524,18 @@ Expected<uint> insertElementIntoGroups(tnt::Connection& conn, const std::set<uin
 
 static std::string createAssetName(tnt::Connection& conn, uint32_t typeId, uint32_t subtypeId)
 {
-    std::string type = persist::typeid_to_type(static_cast<uint16_t>(typeId));
+    std::string type    = persist::typeid_to_type(static_cast<uint16_t>(typeId));
     std::string subtype = persist::subtypeid_to_subtype(static_cast<uint16_t>(subtypeId));
 
     std::string assetName;
-    timeval t;
+    timeval     t;
 
-    bool valid = false;
+    bool        valid = false;
     std::string indexStr;
 
     unsigned retry = 0;
 
-    while(!valid && (retry++ < MAX_CREATE_RETRY)) {
+    while (!valid && (retry++ < MAX_CREATE_RETRY)) {
         gettimeofday(&t, nullptr);
         srand(static_cast<unsigned int>(t.tv_sec * t.tv_usec));
         // generate 8 digit random integer
@@ -554,13 +554,13 @@ static std::string createAssetName(tnt::Connection& conn, uint32_t typeId, uint3
         logDebug("Checking ID {} validity", indexStr);
         try {
             auto res = conn.selectRow(sql, "name"_p = std::string("%").append(indexStr));
-            valid = (res.get<unsigned>("cnt") == 0);
+            valid    = (res.get<unsigned>("cnt") == 0);
         } catch (const std::exception& e) {
             throw std::runtime_error(e.what());
         }
     }
 
-    if(!valid) {
+    if (!valid) {
         throw std::runtime_error("Multiple Asset ID collisions - impossible to create asset");
     }
 
@@ -1366,12 +1366,49 @@ Expected<std::vector<std::string>> selectGroupNames(uint32_t id)
         tnt::Connection conn;
 
         std::vector<std::string> result;
-        for(const auto& row: conn.select(sql, "id"_p = id)) {
+        for (const auto& row : conn.select(sql, "id"_p = id)) {
             result.push_back(row.get("name"));
         }
         return std::move(result);
     } catch (const std::exception& e) {
         return unexpected(error(Errors::ExceptionForElement).format(e.what(), id));
+    }
+}
+
+// =====================================================================================================================
+
+Expected<WebAssetElement> findParentByType(uint32_t assetId, uint16_t parentType)
+{
+    static const std::string sql = R"(
+        SELECT
+            id_parent,
+            id_parent_type
+        FROM v_web_element
+            WHERE id = :id
+    )";
+
+    try {
+        tnt::Connection conn;
+
+        uint32_t aid = assetId;
+        while (true) {
+            auto     row      = conn.selectRow(sql, "id"_p = aid);
+            uint32_t idParent = row.get<uint32_t>("id_parent");
+            if (idParent) {
+                uint16_t type = row.get<uint16_t>("id_parent_type");
+                if (type == parentType) {
+                    return selectAssetElementWebById(idParent);
+                }
+                aid = idParent;
+            } else {
+                break;
+            }
+        }
+
+        return unexpected(
+            error(Errors::ElementNotFound).format("parent with type " + persist::typeid_to_type(parentType)));
+    } catch (const std::exception& e) {
+        return unexpected(error(Errors::ExceptionForElement).format(e.what(), assetId));
     }
 }
 

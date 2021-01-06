@@ -304,4 +304,9 @@ Expected<std::vector<WebAssetElement>> selectAssetElementAll(const std::optional
 /// @param id asset element id
 /// @return group names or error
 Expected<std::vector<std::string>> selectGroupNames(uint32_t id);
+
+/// Finds parent by type for asset
+/// @param assetId asset id
+/// @param parentType parent type
+Expected<WebAssetElement> findParentByType(uint32_t assetId, uint16_t parentType);
 } // namespace fty::asset::db
