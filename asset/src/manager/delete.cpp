@@ -76,6 +76,7 @@ static AssetExpected<void> deleteAssetRec(ElementPtr& el, bool sendNotify)
     return {};
 }
 
+// Check if datacenter in data centric mode (fast_track == true) and if yes, try to check if this feed is last in dc.
 static bool checkFeed(const db::AssetElement& asset)
 {
     auto ret = db::findParentByType(asset.id, persist::DATACENTER);
