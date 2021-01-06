@@ -2,8 +2,8 @@
 #include "asset/asset-db.h"
 #include "asset/asset-manager.h"
 #include "asset/db.h"
-#include "asset/logger.h"
 #include "asset/json.h"
+#include "asset/logger.h"
 #include <fty_asset_activator.h>
 #include <fty_common_asset_types.h>
 
@@ -53,46 +53,86 @@ static void collectLinks(uint32_t elementId, std::vector<uint32_t>& links, const
 }
 
 // Delete asset recursively
-static AssetExpected<void> deleteAssetRec(ElementPtr& el)
+static AssetExpected<void> deleteAssetRec(ElementPtr& el, bool sendNotify)
 {
     if (el->isDeleted) {
         return {};
     }
 
     for (auto& it : el->links) {
-        if (auto ret = deleteAssetRec(it); !ret) {
+        if (auto ret = deleteAssetRec(it, sendNotify); !ret) {
             return unexpected(ret.error());
         }
     }
     for (auto& it : el->chidren) {
-        if (auto ret = deleteAssetRec(it); !ret) {
+        if (auto ret = deleteAssetRec(it, sendNotify); !ret) {
             return unexpected(ret.error());
         }
     }
-    if (auto ret = AssetManager::deleteAsset(*el); !ret) {
+    if (auto ret = AssetManager::deleteAsset(*el, sendNotify); !ret) {
         return unexpected(ret.error());
     }
     el->isDeleted = true;
     return {};
 }
 
+// Check if datacenter in data centric mode (fast_track == true) and if yes, try to check if this feed is last in dc.
+static bool checkFeed(const db::AssetElement& asset)
+{
+    auto ret = db::findParentByType(asset.id, persist::DATACENTER);
+    if (!ret) {
+        return true;
+    }
+
+    auto attrs = db::selectExtAttributes(ret->id);
+    if (!attrs) {
+        return true;
+    }
+
+    if (attrs->find("fast_track") == attrs->end()) {
+        return true;
+    }
+
+    if ((*attrs)["fast_track"].value != "true") {
+        return true;
+    }
+
+    tnt::Connection conn;
+    std::vector<uint32_t> ids;
+    db::selectAssetsByContainer(conn, ret->id, {persist::DEVICE}, {persist::FEED}, {}, {}, [&](const tnt::Row& row) {
+        ids.push_back(row.get<uint32_t>("asset_id"));
+    });
+
+    if (ids.size() == 1 && ids[0] == asset.id) {
+        return false;
+    }
+
+    return true;
+}
+
 // =====================================================================================================================
 
-AssetExpected<db::AssetElement> AssetManager::deleteAsset(uint32_t id)
+AssetExpected<db::AssetElement> AssetManager::deleteAsset(uint32_t id, bool sendNotify)
 {
     auto asset = db::selectAssetElementWebById(id);
     if (!asset) {
         return unexpected(asset.error());
     }
-    return deleteAsset(*asset);
+    return deleteAsset(*asset, sendNotify);
 }
 
-AssetExpected<db::AssetElement> AssetManager::deleteAsset(const db::AssetElement& asset)
+AssetExpected<db::AssetElement> AssetManager::deleteAsset(const db::AssetElement& asset, bool sendNotify)
 {
     // disable deleting RC0
     if (asset.name == "rackcontroller-0") {
         logDebug("Prevented deleting RC-0");
         return unexpected("Prevented deleting RC-0");
+    }
+
+    if (asset.subtypeId == persist::FEED) {
+        if (!checkFeed(asset)) {
+            return unexpected("Last feed cannot be deleted in device centric mode"_tr);
+        }
     }
 
     // check if a logical_asset refer to the item we are trying to delete
@@ -102,7 +142,7 @@ AssetExpected<db::AssetElement> AssetManager::deleteAsset(const db::AssetElement
     }
 
     // make the device inactive first
-    if (asset.status == "active") {
+    if (asset.status == "active" && sendNotify) {
         std::string asset_json = getJsonAsset(asset.id);
 
         try {
@@ -116,7 +156,6 @@ AssetExpected<db::AssetElement> AssetManager::deleteAsset(const db::AssetElement
     }
 
     auto ret = [&]() -> AssetExpected<db::AssetElement> {
-
         switch (asset.typeId) {
             case persist::asset_type::DATACENTER:
             case persist::asset_type::ROW:
@@ -124,18 +163,18 @@ AssetExpected<db::AssetElement> AssetManager::deleteAsset(const db::AssetElement
             case persist::asset_type::RACK:
                 return deleteDcRoomRowRack(asset);
             case persist::asset_type::GROUP:
-            return deleteGroup(asset);
+                return deleteGroup(asset);
             case persist::asset_type::DEVICE: {
                 return deleteDevice(asset);
             }
         }
-        
+
         logError("unknown type");
         return unexpected("unknown type"_tr);
     }();
 
-    //in case of error we need to try to activate the asset again.
-    if (!ret && asset.status == "active") {
+    // in case of error we need to try to activate the asset again.
+    if (!ret && asset.status == "active" && sendNotify) {
         std::string asset_json = getJsonAsset(asset.id);
 
         try {
@@ -147,20 +186,23 @@ AssetExpected<db::AssetElement> AssetManager::deleteAsset(const db::AssetElement
         }
     }
 
-    try {
-        logDebug("Deleting all mappings for asset {}", asset.name);
-        deleteMappings(asset.name);
-    } catch (const std::exception& e) {
-        log_error("Failed to update CAM: %s", e.what());
+    if (sendNotify) {
+        try {
+            logDebug("Deleting all mappings for asset {}", asset.name);
+            deleteMappings(asset.name);
+        } catch (const std::exception& e) {
+            log_error("Failed to update CAM: %s", e.what());
+        }
     }
 
     return ret ? AssetExpected<db::AssetElement>(*ret) : unexpected(ret.error());
 }
 
-std::map<std::string, AssetExpected<db::AssetElement>> AssetManager::deleteAsset(const std::map<uint32_t, std::string>& ids)
+std::map<std::string, AssetExpected<db::AssetElement>> AssetManager::deleteAsset(
+    const std::map<uint32_t, std::string>& ids, bool sendNotify)
 {
     std::map<std::string, AssetExpected<db::AssetElement>> result;
-    std::vector<std::shared_ptr<Element>>             toDel;
+    std::vector<std::shared_ptr<Element>>                  toDel;
 
     for (const auto& [id, name] : ids) {
         ElementPtr el = std::make_shared<Element>();
@@ -211,7 +253,7 @@ std::map<std::string, AssetExpected<db::AssetElement>> AssetManager::deleteAsset
 
     // Delete all elements recursively
     for (auto& it : toDel) {
-        if (auto ret = deleteAssetRec(it)) {
+        if (auto ret = deleteAssetRec(it, sendNotify)) {
             result.emplace(it->name, *it);
         } else {
             result.emplace(it->name, unexpected(ret.error()));
