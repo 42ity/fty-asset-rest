@@ -5,7 +5,9 @@
 #include <fty/split.h>
 #include <fty/translate.h>
 #include <fty_common_asset_types.h>
+#include <sys/time.h>
 
+#define MAX_CREATE_RETRY 10
 
 namespace fty::asset::db {
 
@@ -520,6 +522,60 @@ Expected<uint> insertElementIntoGroups(tnt::Connection& conn, const std::set<uin
 
 // =====================================================================================================================
 
+static std::string createAssetName(tnt::Connection& conn, uint32_t typeId, uint32_t subtypeId)
+{
+    std::string type    = persist::typeid_to_type(static_cast<uint16_t>(typeId));
+    std::string subtype = persist::subtypeid_to_subtype(static_cast<uint16_t>(subtypeId));
+
+    std::string assetName;
+    timeval     t;
+
+    bool        valid = false;
+    std::string indexStr;
+
+    unsigned retry = 0;
+
+    while (!valid && (retry++ < MAX_CREATE_RETRY)) {
+        gettimeofday(&t, nullptr);
+        srand(static_cast<unsigned int>(t.tv_sec * t.tv_usec));
+        // generate 8 digit random integer
+        unsigned long index = static_cast<unsigned long>(rand()) % static_cast<unsigned long>(100000000);
+
+        indexStr = std::to_string(index);
+        // create 8 digit index with leading zeros
+        indexStr = std::string(8 - indexStr.length(), '0') + indexStr;
+
+        static const std::string sql = R"(
+            SELECT COUNT(id_asset_element) as cnt
+            FROM t_bios_asset_element
+            WHERE name like :name
+        )";
+
+        logDebug("Checking ID {} validity", indexStr);
+        try {
+            auto res = conn.selectRow(sql, "name"_p = std::string("%").append(indexStr));
+            valid    = (res.get<unsigned>("cnt") == 0);
+        } catch (const std::exception& e) {
+            throw std::runtime_error(e.what());
+        }
+    }
+
+    if (!valid) {
+        throw std::runtime_error("Multiple Asset ID collisions - impossible to create asset");
+    }
+
+    if (type == fty::TYPE_DEVICE) {
+        assetName = subtype + "-" + indexStr;
+    } else {
+        assetName = type + "-" + indexStr;
+    }
+
+    return assetName;
+}
+
+
+// =====================================================================================================================
+
 Expected<uint32_t> insertIntoAssetElement(tnt::Connection& conn, const AssetElement& element, bool update)
 {
     if (!persist::is_ok_name(element.name.c_str())) {
@@ -542,20 +598,11 @@ Expected<uint32_t> insertIntoAssetElement(tnt::Connection& conn, const AssetElem
         ON DUPLICATE KEY UPDATE name = :name
     )";
 
-    static const std::string updateSql = R"(
-        UPDATE
-            t_bios_asset_element
-        SET
-            name = concat(:name, '-', :id)
-        WHERE
-            id_asset_element = :id
-    )";
-
     try {
         auto st = conn.prepare(sql);
         // clang-format off
         st.bind(
-            "name"_p      = update ? element.name : element.name + "-@@-" + std::to_string(rand()),
+            "name"_p      = update ? element.name : createAssetName(conn, element.typeId, element.subtypeId),
             "typeId"_p    = element.typeId,
             "subtypeId"_p = element.subtypeId != 0 ? element.subtypeId : uint32_t(persist::asset_subtype::N_A),
             "status"_p    = element.status,
@@ -567,15 +614,6 @@ Expected<uint32_t> insertIntoAssetElement(tnt::Connection& conn, const AssetElem
         uint affectedRows = st.execute();
 
         uint32_t rowid = uint32_t(conn.lastInsertId());
-
-        if (!update) {
-            // clang-format off
-            conn.execute(updateSql,
-                "name"_p = element.name,
-                "id"_p   = rowid
-            );
-            // clang-format on
-        }
 
         if (affectedRows == 0) {
             return unexpected("Something going wrong");
@@ -1000,10 +1038,11 @@ Expected<std::vector<DbAssetLink>> selectAssetDeviceLinksTo(uint32_t elementId, 
 
         for (const auto& row : rows) {
             DbAssetLink link;
+            link.destId = elementId;
             row.get("id_asset_element_src", link.srcId);
             row.get("src_out", link.srcSocket);
-            row.get("dest_in", link.destId);
-            row.get("src_name", link.destSocket);
+            row.get("dest_in", link.destSocket);
+            row.get("src_name", link.srcName);
 
             ret.push_back(link);
         }
@@ -1327,12 +1366,49 @@ Expected<std::vector<std::string>> selectGroupNames(uint32_t id)
         tnt::Connection conn;
 
         std::vector<std::string> result;
-        for(const auto& row: conn.select(sql, "id"_p = id)) {
+        for (const auto& row : conn.select(sql, "id"_p = id)) {
             result.push_back(row.get("name"));
         }
         return std::move(result);
     } catch (const std::exception& e) {
         return unexpected(error(Errors::ExceptionForElement).format(e.what(), id));
+    }
+}
+
+// =====================================================================================================================
+
+Expected<WebAssetElement> findParentByType(uint32_t assetId, uint16_t parentType)
+{
+    static const std::string sql = R"(
+        SELECT
+            id_parent,
+            id_parent_type
+        FROM v_web_element
+            WHERE id = :id
+    )";
+
+    try {
+        tnt::Connection conn;
+
+        uint32_t aid = assetId;
+        while (true) {
+            auto     row      = conn.selectRow(sql, "id"_p = aid);
+            uint32_t idParent = row.get<uint32_t>("id_parent");
+            if (idParent) {
+                uint16_t type = row.get<uint16_t>("id_parent_type");
+                if (type == parentType) {
+                    return selectAssetElementWebById(idParent);
+                }
+                aid = idParent;
+            } else {
+                break;
+            }
+        }
+
+        return unexpected(
+            error(Errors::ElementNotFound).format("parent with type " + persist::typeid_to_type(parentType)));
+    } catch (const std::exception& e) {
+        return unexpected(error(Errors::ExceptionForElement).format(e.what(), assetId));
     }
 }
 

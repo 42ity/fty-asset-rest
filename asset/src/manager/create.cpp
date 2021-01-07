@@ -2,14 +2,19 @@
 #include "asset/csv.h"
 #include <fty_asset_activator.h>
 #include "asset/logger.h"
+#include "asset/asset-cam.h"
 #include "asset/asset-import.h"
 #include "asset/asset-configure-inform.h"
+#include <mutex>
 
 namespace fty::asset {
 
 #define AGENT_ASSET_ACTIVATOR "etn-licensing-credits"
 #define CREATE_MODE_ONE_ASSET 1
 #define CREATE_MODE_CSV       2
+
+//ensure only 1 request is process at the time
+static std::mutex g_modification;
 
 AssetExpected<uint32_t> AssetManager::createAsset(const std::string& json, const std::string& user, bool sendNotify)
 {
@@ -29,6 +34,8 @@ AssetExpected<uint32_t> AssetManager::createAsset(const std::string& json, const
     si.getMember("name", itemName);
 
     logDebug("Create asset {}", itemName);
+
+    const std::lock_guard<std::mutex> lock(g_modification);
 
     CsvMap cm;
     try {
@@ -114,6 +121,18 @@ AssetExpected<uint32_t> AssetManager::createAsset(const std::string& json, const
             if (!ret) {
                 logError(ret.error());
                 return unexpected(msg.format(itemName, "Database failure"_tr));
+            }
+            try {
+                ExtMap map;
+                getExtMapFromSi(si, map);
+
+                const auto& assetIname = ret.value().first;
+
+                deleteMappings(assetIname);
+                auto credentialList = getCredentialMappings(map);
+                createMappings(assetIname, credentialList);
+            } catch (const std::exception& e) {
+                log_error("Failed to update CAM: %s", e.what());
             }
             return imported.at(1)->id;
         } else {

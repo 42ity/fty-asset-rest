@@ -28,7 +28,7 @@ AssetExpected<AssetManager::ImportList> AssetManager::importCsv(
                 res.emplace(row, unexpected(el.error()));
             }
         }
-        return res;
+        return std::move(res);
     } else {
         return unexpected(ret.error());
     }

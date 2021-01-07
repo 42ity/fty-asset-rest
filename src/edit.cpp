@@ -3,6 +3,7 @@
 #include "asset/asset-import.h"
 #include "asset/asset-manager.h"
 #include "asset/csv.h"
+#include "asset/asset/asset-cam.h"
 #include "asset/logger.h"
 #include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
@@ -135,6 +136,20 @@ unsigned Edit::run()
             }
             m_reply << "{\"id\": \"" << ret->first << "\"}";
             auditInfo("Request CREATE OR UPDATE asset id {} SUCCESS"_tr, *id);
+
+            try {
+                ExtMap map;
+                getExtMapFromSi(si, map);
+
+                const auto& assetIname = ret.value().first;
+
+                deleteMappings(assetIname);
+                auto credentialList = getCredentialMappings(map);
+                createMappings(assetIname, credentialList);
+            } catch (const std::exception& e) {
+                log_error("Failed to update CAM: %s", e.what());
+            }
+
             return HTTP_OK;
         } else {
             auditError("Request CREATE OR UPDATE asset id {} FAILED: {}"_tr, *id, imported.at(1).error());

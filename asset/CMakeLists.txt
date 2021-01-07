@@ -29,6 +29,7 @@ etn_target(static ${PROJECT_NAME}
 
     SOURCES
         src/json.cpp
+        src/asset-cam.cpp
         src/asset-manager.cpp
         src/asset-computed.cpp
         src/asset-helpers.cpp
@@ -55,5 +56,6 @@ etn_target(static ${PROJECT_NAME}
         fty_common_mlm
         czmq
         fty_proto
+        fty_security_wallet
     PRIVATE
 )

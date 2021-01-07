@@ -12,6 +12,7 @@ etn_test(asset-test
         create.cpp
         import.cpp
         export.cpp
+        delete.cpp
     CONFIGS
         conf/logger.conf
     USES
@@ -24,11 +25,8 @@ etn_test(asset-test
         yaml-cpp
         log4cplus
         pthread
+        stdc++fs
 )
 
 #etn_coverage(asset-test)
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_link_libraries(asset-test PRIVATE stdc++fs)
-endif()
 

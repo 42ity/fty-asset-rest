@@ -23,12 +23,18 @@
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include "asset/asset-manager.h"
+#include "asset/json.h"
+#include "asset/asset-computed.h"
+#include <fty/split.h>
+#include <fty_common.h>
+#include <fty_common_db_asset.h>
+#include <fty_common_rest.h>
+#include <fty_shm.h>
 
 namespace fty::asset {
 
 unsigned Create::run()
 {
-auditInfo("create asset");
     rest::User user(m_request);
     if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
         throw rest::Error(ret.error());
@@ -41,6 +47,18 @@ auditInfo("create asset");
         auditError(ret.error());
         throw rest::errors::Internal(ret.error());
     }
+
+    auto createdAsset = AssetManager::getItem(*ret);
+
+    if (!createdAsset) {
+        auditError(createdAsset.error());
+        throw rest::errors::Internal(createdAsset.error());        
+    } 
+
+    m_reply << "{ " << utils::json::jsonify("id", createdAsset->name) << " }\n\n";
+
+    auditInfo("Request CREATE asset id {} SUCCESS"_tr, createdAsset->name);
+
 
     return HTTP_OK;
 }

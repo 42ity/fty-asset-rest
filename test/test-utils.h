@@ -2,9 +2,9 @@
 #include "asset/asset-db.h"
 #include "asset/asset-helpers.h"
 #include "asset/db.h"
+#include <catch2/catch.hpp>
 #include <fty_common_asset_types.h>
 #include <yaml-cpp/yaml.h>
-#include <catch2/catch.hpp>
 
 inline fty::asset::db::AssetElement createAsset(
     const std::string& name, const std::string& extName, const std::string& type, uint32_t parentId = 0)
@@ -38,6 +38,56 @@ inline fty::asset::db::AssetElement createAsset(
     return el;
 }
 
+template <uint16_t Type, uint16_t SubType = 0>
+class AssetElement : public fty::asset::db::AssetElement
+{
+public:
+    AssetElement(const std::string& _name, uint32_t _parentId = 0)
+    {
+        name      = _name;
+        parentId  = _parentId;
+        status    = "active";
+        priority  = 1;
+        typeId    = Type;
+        subtypeId = SubType;
+
+        tnt::Connection conn;
+        auto            ret = fty::asset::db::insertIntoAssetElement(conn, *this, true);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+        id = *ret;
+    }
+
+
+    void setExtName(const std::string& extName)
+    {
+        tnt::Connection conn;
+        auto            ret = fty::asset::db::insertIntoAssetExtAttributes(conn, id, {{"name", extName}}, true);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+    }
+
+    void setExtAttributes(const std::map<std::string, std::string>& attr)
+    {
+        tnt::Connection conn;
+        auto            ret = fty::asset::db::insertIntoAssetExtAttributes(conn, id, attr, true);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+    }
+};
+
+namespace assets {
+using DataCenter = AssetElement<persist::DATACENTER>;
+using Device     = AssetElement<persist::DEVICE>;
+using Feed       = AssetElement<persist::DEVICE, persist::FEED>;
+} // namespace assets
+
 inline void deleteAsset(const fty::asset::db::AssetElement& el)
 {
     tnt::Connection conn;
@@ -48,7 +98,7 @@ inline void deleteAsset(const fty::asset::db::AssetElement& el)
             FAIL(ret.error());
         }
         CHECK(ret);
-        CHECK(*ret > 0);
+        CHECK(*ret >= 0);
     }
 
     {
@@ -83,15 +133,15 @@ inline YAML::Node reorder(const YAML::Node& node)
     if (node.IsMap()) {
         ret = YAML::Node(YAML::NodeType::Map);
         std::map<std::string, YAML::Node> map;
-        for(const auto& it: node) {
+        for (const auto& it : node) {
             map[it.first.as<std::string>()] = it.second.IsMap() ? reorder(it.second) : it.second;
         }
-        for(const auto&[key, val]: map) {
+        for (const auto& [key, val] : map) {
             ret[key] = val;
         }
     } else if (node.IsSequence()) {
         ret = YAML::Node(YAML::NodeType::Sequence);
-        for(const auto& it: node) {
+        for (const auto& it : node) {
             ret.push_back(it.second.IsMap() ? reorder(it.second) : it.second);
         }
     } else {

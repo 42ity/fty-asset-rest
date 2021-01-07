@@ -7,7 +7,7 @@
 import params.CmakePipelineParams
 CmakePipelineParams parameters = new CmakePipelineParams()
 parameters.enableDebugBuild = true
-parameters.debugBuildRunTests = true
+parameters.debugBuildRunTests = false
 parameters.debugBuildRunMemcheck = false
 parameters.debugBuildRunCoverage = false
 

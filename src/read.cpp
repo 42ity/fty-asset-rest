@@ -35,27 +35,30 @@ unsigned Read::run()
         throw rest::Error(ret.error());
     }
 
-    auto strId = m_request.queryArg<std::string>("id");
-    auto type  = m_request.queryArg<std::string>("type");
+    auto strIdPrt = m_request.queryArg<std::string>("id");
+    auto typePtr  = m_request.queryArg<std::string>("type");
 
-    if (!strId) {
+    if (!strIdPrt) {
         throw rest::errors::RequestParamRequired("id");
     }
 
-    if (type && !persist::type_to_typeid(*type)) {
-        throw rest::errors::RequestParamBad("type", *type, "one of datacenter/room/row/rack/group/device"_tr);
+    std::string strId(*strIdPrt);
+    std::string type = typePtr ? std::string(*typePtr) : std::string();
+
+    if (!type.empty() && !persist::type_to_typeid(type)) {
+        throw rest::errors::RequestParamBad("type", type, "one of datacenter/room/row/rack/group/device"_tr);
     }
 
     uint32_t id = 0;
-    if (auto res = checkElementIdentifier("dev", *strId)) {
+    if (auto res = checkElementIdentifier("dev", strId)) {
         id = *res;
-    } else if (type) {
-        if (auto res2 = checkElementIdentifier("dev", *type + *strId)) {
+    } else if (!type.empty()) {
+        if (auto res2 = checkElementIdentifier("dev", type + strId)) {
             id = *res2;
         }
     }
     if (!id) {
-        throw rest::errors::ElementNotFound(*strId);
+        throw rest::errors::ElementNotFound(strId);
     }
 
 

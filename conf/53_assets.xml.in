@@ -44,7 +44,7 @@
 <mapping>
   <target>asset/export@lib${NAME}</target>
   <method>GET</method>
-  <url>^/api/v1/asset/export</url>
+  <url>^/api/v1/asset/export$</url>
 </mapping>
 
 <mapping>
