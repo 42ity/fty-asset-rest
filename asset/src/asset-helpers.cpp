@@ -40,7 +40,11 @@ AssetExpected<std::string> sanitizeDate(const std::string& inp)
             continue;
         }
         std::array<char, 11> buff;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
         std::strftime(buff.data(), buff.size(), fmt.c_str(), &timeinfo);
+#pragma GCC diagnostic pop
         return std::string(buff.begin(), buff.end());
     }
 

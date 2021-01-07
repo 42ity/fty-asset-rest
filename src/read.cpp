@@ -43,7 +43,7 @@ unsigned Read::run()
     }
 
     std::string strId(*strIdPrt);
-    std::string type = typePtr ? std::string(*typePtr) : std::string();
+    std::string type = typePtr ? *typePtr : std::string();
 
     if (!type.empty() && !persist::type_to_typeid(type)) {
         throw rest::errors::RequestParamBad("type", type, "one of datacenter/room/row/rack/group/device"_tr);
