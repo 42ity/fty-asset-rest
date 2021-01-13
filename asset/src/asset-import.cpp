@@ -635,8 +635,8 @@ AssetExpected<db::AssetElement> Import::processRow(size_t row, const std::set<ui
         extattributes["type"] = subtype;
     }
 
-    if (extattributes.find("u_size") != extattributes.end() && extattributes.find("location_u_pos") != extattributes.end()) {
-        if (!tryToPlace(parentId, extattributes["u_size"], extattributes["location_u_pos"])) {
+    if (extattributes.count("u_size") && extattributes.count("location_u_pos")) {
+        if (!tryToPlace(id, parentId, extattributes["u_size"], extattributes["location_u_pos"])) {
             return unexpected(error(Errors::InternalError).format("Asset is not fit"));
         }
     }
@@ -1072,7 +1072,7 @@ Expected<uint32_t> Import::insertDevice(tnt::Connection& conn, const std::vector
     return elementId;
 }
 
-bool Import::tryToPlace(uint32_t parentId, const std::string& size, const std::string& loc)
+bool Import::tryToPlace(uint32_t id, uint32_t parentId, const std::string& size, const std::string& loc)
 {
     std::cerr << "try to place " << parentId << " size: " << size << " at: " << loc << std::endl;
     auto attr = db::selectExtAttributes(parentId);
@@ -1089,6 +1089,10 @@ bool Import::tryToPlace(uint32_t parentId, const std::string& size, const std::s
     }
 
     for(const auto& child: *children) {
+        if (child == id) {
+            continue;
+        }
+
         auto chAttr = db::selectExtAttributes(child);
         if (!chAttr) {
             continue;
