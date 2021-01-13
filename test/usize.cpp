@@ -1,78 +1,121 @@
-#include "test-utils.h"
 #include "asset/asset-db.h"
 #include "asset/asset-manager.h"
+#include "test-utils.h"
 
+template <typename T>
 struct Holder
 {
-    Holder(uint32_t id):
-        m_el(*fty::asset::db::selectAssetElementWebById(id))
-    {}
+    Holder():
+        m_delete(false)
+    {
+    }
 
-    Holder(const fty::asset::db::AssetElement& el):
-        m_el(el)
-    {}
+    explicit Holder(const T& el)
+        : m_el(el)
+    {
+    }
 
     ~Holder()
     {
-        std::cerr << "delete " << m_el.name << std::endl;
-        deleteAsset(m_el);
+        if (m_delete) {
+            std::cerr << "delete " << m_el.name << std::endl;
+            deleteAsset(m_el);
+        }
     }
 
-    fty::asset::db::AssetElement m_el;
+    bool m_delete = true;
+    T m_el;
 };
 
-static Holder placeAsset(int size, int location)
+static Holder<fty::asset::db::AssetElement> placeAsset(fty::asset::db::AssetElement& parent, int size, int location, bool expectOk)
 {
     using namespace fmt::literals;
     std::string json;
     try {
         json = fmt::format(R"({{
-            "location" :            "Rack",
             "name" :                "{name}",
             "priority" :            "P2",
             "status" :              "active",
             "sub_type" :            "server",
             "type" :                "device",
+            "location":             "{parent}",
             "ext": [
                 {{"u_size"         : "{size}",      "read_only": true}},
                 {{"location_u_pos" : "{loc}",       "read_only": true}},
                 {{"location_w_pos" : "horizonatal", "read_only": true}}
             ]
-        }})", "name"_a = "el"+std::to_string(random()), "size"_a = size, "loc"_a = location);
-    } catch(const fmt::format_error& e) {
+        }})",
+            "name"_a = "el" + std::to_string(random()), "size"_a = size, "loc"_a = location, "parent"_a = parent.name);
+    } catch (const fmt::format_error& e) {
         std::cerr << e.what() << std::endl;
     }
 
     auto ret = fty::asset::AssetManager::createAsset(json, "dummy", false);
-    if (!ret) {
-        FAIL(ret.error());
+    if (expectOk) {
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        CHECK(*ret);
+        return Holder<fty::asset::db::AssetElement>(*fty::asset::db::selectAssetElementWebById(*ret));
+    } else {
+        CHECK(!ret);
+        return Holder<fty::asset::db::AssetElement>();
     }
-    REQUIRE(ret);
-    CHECK(*ret > 0);
-    return Holder(*ret);
 }
 
-TEST_CASE("USize/Ok")
+TEST_CASE("USize")
 {
-    fty::asset::db::AssetElement dc   = createAsset("datacenter", "Data center", "datacenter");
-    fty::asset::db::AssetElement row  = createAsset("row", "Row", "row", dc.id);
-    fty::asset::db::AssetElement rack = createAsset("rack", "Rack", "rack", row.id);
+    assets::DataCenter dc("datacenter");
+    assets::Row        row("row", dc);
+    assets::Rack       rack("rack", row);
 
-    tnt::Connection conn;
-    fty::asset::db::insertIntoAssetExtAttributes(conn, rack.id, {{"u_size", "10"}}, true);
+    rack.setExtAttributes({{"u_size", "10"}});
 
     SECTION("Fit it")
     {
-        auto el = placeAsset(2, 1);
-        auto el1 = placeAsset(2, 2);
-        auto el2 = placeAsset(2, 3);
-        auto el3 = placeAsset(2, 4);
-        std::cerr << "exit scope" << std::endl;
+        auto el  = placeAsset(rack, 1, 1, true);
+        auto el1 = placeAsset(rack, 1, 2, true);
+        auto el2 = placeAsset(rack, 1, 3, true);
+        auto el3 = placeAsset(rack, 1, 4, true);
+    }
+
+    SECTION("Wrong pos")
+    {
+        auto el  = placeAsset(rack, 2, 1, true);
+        auto el1 = placeAsset(rack, 1, 2, false);
+    }
+
+    SECTION("Fit it 2")
+    {
+        auto el  = placeAsset(rack, 2, 1, true);
+        auto el1 = placeAsset(rack, 1, 4, true);
+        auto el2 = placeAsset(rack, 1, 5, true);
+        auto el3 = placeAsset(rack, 1, 6, true);
+    }
+
+    SECTION("Huge")
+    {
+        auto el  = placeAsset(rack, 10, 1, true);
+    }
+
+    SECTION("Huge fail")
+    {
+        auto el  = placeAsset(rack, 11, 1, false);
+    }
+
+    SECTION("Border pos")
+    {
+        auto el  = placeAsset(rack, 1, 9, true);
+        auto el1 = placeAsset(rack, 1, 10, true);
+    }
+
+    SECTION("Border pos wrong")
+    {
+        auto el  = placeAsset(rack, 1, 9, true);
+        auto el1 = placeAsset(rack, 2, 10, false);
     }
 
     deleteAsset(rack);
     deleteAsset(row);
     deleteAsset(dc);
 }
-
-

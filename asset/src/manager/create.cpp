@@ -1,10 +1,10 @@
+#include "asset/asset-cam.h"
+#include "asset/asset-configure-inform.h"
+#include "asset/asset-import.h"
 #include "asset/asset-manager.h"
 #include "asset/csv.h"
-#include <fty_asset_activator.h>
 #include "asset/logger.h"
-#include "asset/asset-cam.h"
-#include "asset/asset-import.h"
-#include "asset/asset-configure-inform.h"
+#include <fty_asset_activator.h>
 #include <mutex>
 
 namespace fty::asset {
@@ -13,7 +13,7 @@ namespace fty::asset {
 #define CREATE_MODE_ONE_ASSET 1
 #define CREATE_MODE_CSV       2
 
-//ensure only 1 request is process at the time
+// ensure only 1 request is process at the time
 static std::mutex g_modification;
 
 AssetExpected<uint32_t> AssetManager::createAsset(const std::string& json, const std::string& user, bool sendNotify)
@@ -100,7 +100,7 @@ AssetExpected<uint32_t> AssetManager::createAsset(const std::string& json, const
         //                user will never know if element was actually inserted
         //                or not
         const auto& imported = import.items();
-        if (imported.find(1) == imported.end()){
+        if (imported.find(1) == imported.end()) {
             return unexpected(msg.format(itemName, "Import failed"_tr));
         }
 
@@ -110,29 +110,30 @@ AssetExpected<uint32_t> AssetManager::createAsset(const std::string& json, const
                 // be unique at the every moment
                 std::string agent_name = generateMlmClientId("web.asset_post");
                 if (auto sent = sendConfigure(*(imported.at(1)), import.operation(), agent_name); !sent) {
-                    logError (sent.error());
-                    return unexpected("Error during configuration sending of asset change notification. Consult system log."_tr);
+                    logError(sent.error());
+                    return unexpected(
+                        "Error during configuration sending of asset change notification. Consult system log."_tr);
                 }
-            }
 
-            // no unexpected errors was detected
-            // process results
-            auto ret =  db::idToNameExtName(imported.at(1)->id);
-            if (!ret) {
-                logError(ret.error());
-                return unexpected(msg.format(itemName, "Database failure"_tr));
-            }
-            try {
-                ExtMap map;
-                getExtMapFromSi(si, map);
+                // no unexpected errors was detected
+                // process results
+                auto ret = db::idToNameExtName(imported.at(1)->id);
+                if (!ret) {
+                    logError(ret.error());
+                    return unexpected(msg.format(itemName, "Database failure"_tr));
+                }
+                try {
+                    ExtMap map;
+                    getExtMapFromSi(si, map);
 
-                const auto& assetIname = ret.value().first;
+                    const auto& assetIname = ret.value().first;
 
-                deleteMappings(assetIname);
-                auto credentialList = getCredentialMappings(map);
-                createMappings(assetIname, credentialList);
-            } catch (const std::exception& e) {
-                log_error("Failed to update CAM: %s", e.what());
+                    deleteMappings(assetIname);
+                    auto credentialList = getCredentialMappings(map);
+                    createMappings(assetIname, credentialList);
+                } catch (const std::exception& e) {
+                    log_error("Failed to update CAM: %s", e.what());
+                }
             }
             return imported.at(1)->id;
         } else {
@@ -143,4 +144,4 @@ AssetExpected<uint32_t> AssetManager::createAsset(const std::string& json, const
     }
 }
 
-}
+} // namespace fty::asset

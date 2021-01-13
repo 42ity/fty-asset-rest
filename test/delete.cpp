@@ -10,7 +10,7 @@ TEST_CASE("Delete asset")
 
     SECTION("Last feed")
     {
-        assets::Feed feed("feed", dc.id);
+        assets::Feed feed("feed", dc);
 
         auto ret = fty::asset::AssetManager::deleteAsset(feed, false);
         REQUIRE(!ret);
@@ -20,8 +20,8 @@ TEST_CASE("Delete asset")
 
     SECTION("Last feeds")
     {
-        assets::Feed feed1("feed1", dc.id);
-        assets::Feed feed2("feed2", dc.id);
+        assets::Feed feed1("feed1", dc);
+        assets::Feed feed2("feed2", dc);
 
         {
             auto ret = fty::asset::AssetManager::deleteAsset(feed1, false);
@@ -41,8 +41,8 @@ TEST_CASE("Delete asset")
 
     SECTION("Last feeds 2")
     {
-        assets::Feed feed1("feed1", dc.id);
-        assets::Feed feed2("feed2", dc.id);
+        assets::Feed feed1("feed1", dc);
+        assets::Feed feed2("feed2", dc);
 
         auto ret = fty::asset::AssetManager::deleteAsset({{feed1.id, feed1.name}, {feed2.id, feed2.name}}, false);
         REQUIRE(ret.size() == 2);
