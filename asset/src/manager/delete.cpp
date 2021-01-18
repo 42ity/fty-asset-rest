@@ -216,7 +216,7 @@ std::map<std::string, AssetExpected<db::AssetElement>> AssetManager::deleteAsset
 
             if (!allChildren.empty() || !links.empty()) {
                 result.emplace(
-                    name, unexpected("can't delete the asset because it has at least one child or asset is linked"_tr));
+                    name, unexpected("Asset can't be deleted because it is referenced by 1 or more asset(s) (being their host, their power source or their paired asset...)"_tr));
             } else {
                 toDel.push_back(el);
             }
