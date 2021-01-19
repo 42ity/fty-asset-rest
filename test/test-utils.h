@@ -42,22 +42,25 @@ template <uint16_t Type, uint16_t SubType = 0>
 class AssetElement : public fty::asset::db::AssetElement
 {
 public:
-    AssetElement(const std::string& _name, uint32_t _parentId = 0)
+    AssetElement(const std::string& _name)
     {
         name      = _name;
-        parentId  = _parentId;
         status    = "active";
         priority  = 1;
         typeId    = Type;
         subtypeId = SubType;
+        create();
+    }
 
-        tnt::Connection conn;
-        auto            ret = fty::asset::db::insertIntoAssetElement(conn, *this, true);
-        if (!ret) {
-            FAIL(ret.error());
-        }
-        REQUIRE(*ret > 0);
-        id = *ret;
+    AssetElement(const std::string& _name, const fty::asset::db::AssetElement& parent)
+    {
+        parentId  = parent.id;
+        name      = _name;
+        status    = "active";
+        priority  = 1;
+        typeId    = Type;
+        subtypeId = SubType;
+        create();
     }
 
 
@@ -80,12 +83,62 @@ public:
         }
         REQUIRE(*ret > 0);
     }
+
+    void setParent(const fty::asset::db::AssetElement& parent)
+    {
+        tnt::Connection conn;
+        auto            ret = fty::asset::db::updateAssetElement(conn, id, parent.id, status, priority, assetTag);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+    }
+
+    void setPower(const fty::asset::db::AssetElement& source)
+    {
+        tnt::Connection           conn;
+        fty::asset::db::AssetLink link;
+        link.dest = id;
+        link.src  = source.id;
+        link.type = 1;
+        auto ret  = fty::asset::db::insertIntoAssetLink(conn, link);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+    }
+
+    void removePower()
+    {
+        tnt::Connection conn;
+
+        auto ret = fty::asset::db::deleteAssetLinksTo(conn, id);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+    }
+
+private:
+    void create()
+    {
+        tnt::Connection conn;
+        auto            ret = fty::asset::db::insertIntoAssetElement(conn, *this, true);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+        id = *ret;
+    }
 };
 
 namespace assets {
 using DataCenter = AssetElement<persist::DATACENTER>;
 using Device     = AssetElement<persist::DEVICE>;
 using Feed       = AssetElement<persist::DEVICE, persist::FEED>;
+using Row        = AssetElement<persist::ROW>;
+using Rack       = AssetElement<persist::RACK>;
+using Server     = AssetElement<persist::DEVICE, persist::SERVER>;
 } // namespace assets
 
 inline void deleteAsset(const fty::asset::db::AssetElement& el)
