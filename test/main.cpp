@@ -518,7 +518,8 @@ int main(int argc, char* argv[])
 
     int result = Catch::Session().run(argc, argv);
 
-    //mysql_library_end();
+    tnt::shutdown();
+    mysql_library_end();
 
     std::filesystem::remove_all(path);
 

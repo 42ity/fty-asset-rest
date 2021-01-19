@@ -564,7 +564,7 @@ static std::string createAssetName(tnt::Connection& conn, uint32_t typeId, uint3
         throw std::runtime_error("Multiple Asset ID collisions - impossible to create asset");
     }
 
-    if (type == fty::TYPE_DEVICE) {
+    if (typeId == persist::DEVICE) {
         assetName = subtype + "-" + indexStr;
     } else {
         assetName = type + "-" + indexStr;

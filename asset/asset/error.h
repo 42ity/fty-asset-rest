@@ -24,7 +24,7 @@ inline Translate error(Errors err)
     case Errors::BadParams:
         return "Parameter '{}' has bad value. Received {}. Expected {}."_tr;
     case Errors::InternalError:
-        return "Parameter '{}' has bad value. Received {}. Expected {}."_tr;
+        return "Internal Server Error. {}."_tr;
     case Errors::ParamRequired:
         return "Parameter '{}' is required."_tr;
     case Errors::BadRequestDocument:

@@ -28,6 +28,11 @@ struct is_instance<U<T>, U> : public std::true_type
 {
 };
 
+inline void shutdown()
+{
+    tntdb::dropCached();
+}
+
 // =====================================================================================================================
 
 class Statement;

@@ -635,6 +635,12 @@ AssetExpected<db::AssetElement> Import::processRow(size_t row, const std::set<ui
         extattributes["type"] = subtype;
     }
 
+    if (extattributes.count("u_size") && extattributes.count("location_u_pos")) {
+        if (!tryToPlace(id, parentId, extattributes["u_size"], extattributes["location_u_pos"])) {
+            return unexpected(error(Errors::InternalError).format("Asset is not fit"));
+        }
+    }
+
     tnt::Connection conn;
 
     db::AssetElement el;
@@ -1064,6 +1070,61 @@ Expected<uint32_t> Import::insertDevice(tnt::Connection& conn, const std::vector
         return unexpected(select.error());
     }
     return elementId;
+}
+
+bool Import::tryToPlace(uint32_t id, uint32_t parentId, const std::string& size, const std::string& loc)
+{
+    std::cerr << "try to place " << parentId << " size: " << size << " at: " << loc << std::endl;
+    auto attr = db::selectExtAttributes(parentId);
+    if (!attr) {
+        return true;
+    }
+
+    std::vector<bool> place;
+    place.resize(convert<size_t>(attr->at("u_size").value), false);
+
+    auto children = db::selectAssetsByParent(parentId);
+    if (!children) {
+        return true;
+    }
+
+    for(const auto& child: *children) {
+        if (child == id) {
+            continue;
+        }
+
+        auto chAttr = db::selectExtAttributes(child);
+        if (!chAttr) {
+            continue;
+        }
+        if (!chAttr->count("u_size") && !chAttr->count("location_u_pos")) {
+            continue;
+        }
+
+        size_t isize = convert<size_t>(chAttr->at("u_size").value);
+        size_t iloc = convert<size_t>(chAttr->at("location_u_pos").value)-1;
+
+        for(size_t i = iloc; i < iloc+isize; ++i) {
+            if (i < place.size()) {
+                place[i] = true;
+            }
+        }
+    }
+
+    std::cerr << implode(place, ",") << std::endl;
+
+    size_t isize = convert<size_t>(size);
+    size_t iloc = convert<size_t>(loc)-1;
+    for(size_t i = iloc; i < iloc+isize; ++i) {
+        if (i >= place.size()) {
+            return false;
+        }
+        if (place[i]) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 } // namespace fty::asset
