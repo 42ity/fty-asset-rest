@@ -63,7 +63,6 @@ public:
         create();
     }
 
-
     void setExtName(const std::string& extName)
     {
         tnt::Connection conn;
@@ -84,6 +83,41 @@ public:
         REQUIRE(*ret > 0);
     }
 
+    void setParent(const fty::asset::db::AssetElement& parent)
+    {
+        tnt::Connection conn;
+        auto            ret = fty::asset::db::updateAssetElement(conn, id, parent.id, status, priority, assetTag);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+    }
+
+    void setPower(const fty::asset::db::AssetElement& source)
+    {
+        tnt::Connection           conn;
+        fty::asset::db::AssetLink link;
+        link.dest = id;
+        link.src  = source.id;
+        link.type = 1;
+        auto ret  = fty::asset::db::insertIntoAssetLink(conn, link);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+    }
+
+    void removePower()
+    {
+        tnt::Connection conn;
+
+        auto ret = fty::asset::db::deleteAssetLinksTo(conn, id);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+    }
+
 private:
     void create()
     {
@@ -95,6 +129,7 @@ private:
         REQUIRE(*ret > 0);
         id = *ret;
     }
+
 };
 
 namespace assets {
