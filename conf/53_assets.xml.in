@@ -84,3 +84,9 @@
     </args>
 </mapping>
 
+<mapping>
+    <target>asset/check-usize@lib${NAME}</target>
+    <url>^/api/v1/asset/check-usize/?$</url>
+    <method>POST</method>
+</mapping>
+
