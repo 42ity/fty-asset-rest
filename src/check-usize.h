@@ -35,6 +35,7 @@ public:
 private:
     // clang-format off
     Permissions m_permissions = {
+        { rest::User::Profile::Admin,     rest::Access::Read },
         { rest::User::Profile::Dashboard, rest::Access::Read }
     };
     // clang-format on
