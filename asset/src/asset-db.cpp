@@ -689,6 +689,11 @@ Expected<int64_t> insertIntoAssetLink(tnt::Connection& conn, const AssetLink& li
         return unexpected("wrong link type");
     }
 
+    if (link.src == link.dest) {
+        logError("ignore insert: connection loop");
+        return unexpected("connection loop was detected");
+    }
+
     static const std::string sql = R"(
         INSERT INTO
             t_bios_asset_link

@@ -14,14 +14,16 @@ static constexpr const char* AGENT_ASSET_ACTIVATOR               = "etn-licensin
 
 // =====================================================================================================================
 
-struct Element;
-using ElementPtr = std::shared_ptr<Element>;
-struct Element : public db::WebAssetElement
-{
-    std::vector<ElementPtr> chidren;
-    std::vector<ElementPtr> links;
-    bool                    isDeleted = false;
-};
+namespace {
+    struct Element;
+    using ElementPtr = std::shared_ptr<Element>;
+    struct Element : public db::WebAssetElement
+    {
+        std::vector<ElementPtr> chidren;
+        std::vector<ElementPtr> links;
+        bool                    isDeleted = false;
+    };
+} // namespace
 
 // =====================================================================================================================
 
@@ -97,7 +99,7 @@ static bool checkFeed(const db::AssetElement& asset)
         return true;
     }
 
-    tnt::Connection conn;
+    tnt::Connection       conn;
     std::vector<uint32_t> ids;
     db::selectAssetsByContainer(conn, ret->id, {persist::DEVICE}, {persist::FEED}, {}, {}, [&](const tnt::Row& row) {
         ids.push_back(row.get<uint32_t>("asset_id"));
