@@ -56,7 +56,6 @@ private:
         uint16_t priority, const std::string& assetTag,
         const std::map<std::string, std::string>& extattributesRO) const;
 
-    bool tryToPlace(uint32_t id, uint32_t parentId, const std::string& size, const std::string& loc);
 private:
     const CsvMap&            m_cm;
     ImportResMap             m_el;

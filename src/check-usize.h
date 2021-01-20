@@ -27,7 +27,7 @@ namespace fty::asset {
 class CheckUSize: public rest::Runner
 {
 public:
-    INIT_REST("asset/check-usize");
+    INIT_REST("asset/fit_in_rack");
 
 public:
     unsigned run() override;
