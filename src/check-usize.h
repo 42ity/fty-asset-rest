@@ -24,7 +24,7 @@
 
 namespace fty::asset {
 
-class CheckUSize: public rest::Runner
+class CheckUSize : public rest::Runner
 {
 public:
     INIT_REST("asset/fit_in_rack");
@@ -35,10 +35,9 @@ public:
 private:
     // clang-format off
     Permissions m_permissions = {
-        { rest::User::Profile::Admin,     rest::Access::Read },
-        { rest::User::Profile::Dashboard, rest::Access::Read }
+        { rest::User::Profile::Admin,     rest::Access::Create }
     };
     // clang-format on
 };
 
-}
+} // namespace fty::asset
