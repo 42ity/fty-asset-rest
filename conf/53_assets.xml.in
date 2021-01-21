@@ -84,3 +84,9 @@
     </args>
 </mapping>
 
+<mapping>
+    <target>asset/fit_in_rack@lib${NAME}</target>
+    <url>^/api/v1/asset/fit_in_rack$</url>
+    <method>POST</method>
+</mapping>
+
