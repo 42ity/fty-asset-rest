@@ -41,14 +41,19 @@ unsigned Read::run()
     auto namePtr  = m_request.queryArg<std::string>("external_name");
 
     uint32_t id = 0;
-    if (namePtr) {
-        auto it = db::selectAssetElementByName(*namePtr, true);
+    if (namePtr && !namePtr->empty()) {
+        auto name = *namePtr;
+        if (name.find("\"") == 0) {
+            name = name.substr(1, name.length()-2);
+        }
+
+        auto it = db::selectAssetElementByName(name, true);
         if (!it) {
-            throw rest::errors::ElementNotFound(*namePtr);
+            throw rest::errors::ElementNotFound(name);
         }
         id = it->id;
     } else {
-        if (!strIdPrt) {
+        if (!strIdPrt || strIdPrt->empty()) {
             throw rest::errors::RequestParamRequired("id");
         }
 
