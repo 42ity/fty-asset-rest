@@ -22,6 +22,7 @@
 #include "read.h"
 #include "asset/asset-helpers.h"
 #include "asset/json.h"
+#include "asset/asset-db.h"
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty_common_asset_types.h>
@@ -37,30 +38,38 @@ unsigned Read::run()
 
     auto strIdPrt = m_request.queryArg<std::string>("id");
     auto typePtr  = m_request.queryArg<std::string>("type");
-
-    if (!strIdPrt) {
-        throw rest::errors::RequestParamRequired("id");
-    }
-
-    std::string strId(*strIdPrt);
-    std::string type = typePtr ? *typePtr : std::string();
-
-    if (!type.empty() && !persist::type_to_typeid(type)) {
-        throw rest::errors::RequestParamBad("type", type, "one of datacenter/room/row/rack/group/device"_tr);
-    }
+    auto namePtr  = m_request.queryArg<std::string>("external_name");
 
     uint32_t id = 0;
-    if (auto res = checkElementIdentifier("dev", strId)) {
-        id = *res;
-    } else if (!type.empty()) {
-        if (auto res2 = checkElementIdentifier("dev", type + strId)) {
-            id = *res2;
+    if (namePtr) {
+        auto it = db::selectAssetElementByName(*namePtr, true);
+        if (!it) {
+            throw rest::errors::ElementNotFound(*namePtr);
+        }
+        id = it->id;
+    } else {
+        if (!strIdPrt) {
+            throw rest::errors::RequestParamRequired("id");
+        }
+
+        std::string strId(*strIdPrt);
+        std::string type = typePtr ? *typePtr : std::string();
+
+        if (!type.empty() && !persist::type_to_typeid(type)) {
+            throw rest::errors::RequestParamBad("type", type, "one of datacenter/room/row/rack/group/device"_tr);
+        }
+
+        if (auto res = checkElementIdentifier("dev", strId)) {
+            id = *res;
+        } else if (!type.empty()) {
+            if (auto res2 = checkElementIdentifier("dev", type + strId)) {
+                id = *res2;
+            }
+        }
+        if (!id) {
+            throw rest::errors::ElementNotFound(strId);
         }
     }
-    if (!id) {
-        throw rest::errors::ElementNotFound(strId);
-    }
-
 
     std::string jsonAsset = getJsonAsset(id);
 
