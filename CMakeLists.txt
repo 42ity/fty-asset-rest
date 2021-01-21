@@ -37,6 +37,8 @@ etn_target(shared ${PROJECT_NAME}
         src/actions-post.h
         src/check-usize.cpp
         src/check-usize.h
+        src/read-byname.cpp
+        src/read-byname.h
     USES
         fty-cmake-rest
         tntnet

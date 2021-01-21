@@ -75,6 +75,15 @@
 </mapping>
 
 <mapping>
+    <target>asset/read-by-name@lib${NAME}</target>
+    <url>^/api/v1/asset/?external_name=(.*)$</url>
+    <method>GET</method>
+    <args>
+        <name>$1</name>
+    </args>
+</mapping>
+
+<mapping>
     <target>asset/read@lib${NAME}</target>
     <url>^/api/v1/asset/?(datacenter|room|row|rack|group|device)?/?(.*)$</url>
     <method>GET</method>
