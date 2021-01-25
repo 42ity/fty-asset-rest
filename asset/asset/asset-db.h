@@ -102,8 +102,9 @@ Expected<int64_t> extNameToAssetId(const std::string& assetExtName); //!test
 
 /// select basic information about asset element by name
 /// @param name asset internal or external name
+/// @param extNameOnly select by external name only
 /// @return AssetElement or error
-Expected<AssetElement> selectAssetElementByName(const std::string& name);  //!test
+Expected<AssetElement> selectAssetElementByName(const std::string& name, bool extNameOnly = false);  //!test
 
 /// Selects all data about asset in WebAssetElement
 /// @param elementId asset element id

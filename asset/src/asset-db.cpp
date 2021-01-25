@@ -193,7 +193,7 @@ Expected<int64_t> extNameToAssetId(const std::string& assetExtName)
 
 // =====================================================================================================================
 
-Expected<AssetElement> selectAssetElementByName(const std::string& elementName)
+Expected<AssetElement> selectAssetElementByName(const std::string& elementName, bool extNameOnly)
 {
     static const std::string nameSql = R"(
         SELECT
@@ -223,10 +223,14 @@ Expected<AssetElement> selectAssetElementByName(const std::string& elementName)
         tnt::Connection db;
         tnt::Row        row;
 
-        try {
-            row = db.selectRow(nameSql, "name"_p = elementName);
-        } catch (const tntdb::NotFound&) {
+        if (extNameOnly) {
             row = db.selectRow(extNameSql, "name"_p = elementName);
+        } else {
+            try {
+                row = db.selectRow(nameSql, "name"_p = elementName);
+            } catch (const tntdb::NotFound&) {
+                row = db.selectRow(extNameSql, "name"_p = elementName);
+            }
         }
 
         AssetElement el;
