@@ -17,7 +17,7 @@ etn_test(asset-test
     CONFIGS
         conf/logger.conf
     USES
-        fty-asset
+        fty-asset-lib
         Catch2::Catch2
         mysqld
         fty_common_db
