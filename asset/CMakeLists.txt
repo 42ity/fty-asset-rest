@@ -48,6 +48,7 @@ etn_target(static ${PROJECT_NAME}
     USES
         fty_common_logging
         mlm
+        fty_asset
         fty_asset_activator
         fty_common
         fty-utils
