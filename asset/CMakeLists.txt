@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 ########################################################################################################################
 
-project(fty-asset
+project(fty-asset-lib
     VERSION 1.0.0
     DESCRIPTION "Fty asset library for tntnet"
 )
@@ -48,7 +48,7 @@ etn_target(static ${PROJECT_NAME}
     USES
         fty_common_logging
         mlm
-        fty_asset
+        fty-asset
         fty_asset_activator
         fty_common
         fty-utils

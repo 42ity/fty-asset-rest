@@ -41,7 +41,7 @@ etn_target(shared ${PROJECT_NAME}
         fty-cmake-rest
         tntnet
         fty_common_rest
-        fty-asset
+        fty-asset-lib
         fty_common_messagebus
         fty_common_dto
     TARGET_DESTINATION /usr/lib/bios
