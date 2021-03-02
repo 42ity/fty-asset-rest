@@ -110,8 +110,13 @@ std::string getJsonAsset(uint32_t elemId)
         json += utils::json::jsonify("location_uri", "/api/v1/asset/" + parent_name) + ",";
         json += utils::json::jsonify("location_id", parent_name) + ",";
         json += utils::json::jsonify("location", ext_parent_name) + ",";
+
+        // Get informations from database
+        auto parentAsset = AssetManager::getItem(tmp->parentId);
+        json += utils::json::jsonify("location_type", trimmed(parentAsset->subtypeName)) + ",";
     } else {
         json += "\"location\":\"\",";
+        json += "\"location_type\":\"\",";
     }
 
     json += "\"groups\": [";
