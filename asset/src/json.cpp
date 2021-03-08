@@ -113,7 +113,7 @@ std::string getJsonAsset(uint32_t elemId)
 
         // Get informations from database
         auto parentAsset = AssetManager::getItem(tmp->parentId);
-        json += utils::json::jsonify("location_type", trimmed(parentAsset->subtypeName)) + ",";
+        json += utils::json::jsonify("location_type", trimmed(parentAsset->typeName)) + ",";
     } else {
         json += "\"location\":\"\",";
         json += "\"location_type\":\"\",";
