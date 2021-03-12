@@ -461,6 +461,28 @@ AssetExpected<db::AssetElement> Import::processRow(
             } else {
                 return unexpected(ret.error());
             }
+
+            // check that power source in same dc as parentId
+            if (parentId) {
+                uint64_t dcId = 0;
+                if (auto ret = db::selectAssetElementWebById(parentId)) {
+                    if (ret->typeId == persist::DATACENTER) {
+                        dcId = ret->id;
+                    } else {
+                        if (auto dc = db::findParentByType(parentId, persist::DATACENTER)) {
+                            dcId = dc->id;
+                        }
+                    }
+                }
+
+                auto fdc = db::findParentByType(oneLink.src, persist::DATACENTER);
+                if (!fdc) {
+                    return unexpected("Power source is not in DC");
+                }
+                if (dcId && dcId != fdc->id) {
+                    return unexpected("Power source is not in same DC");
+                }
+            }
         }
 
         // column name
