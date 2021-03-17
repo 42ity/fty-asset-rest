@@ -1,9 +1,10 @@
 #include "edit.h"
+#include "asset/asset-cam.h"
 #include "asset/asset-configure-inform.h"
+#include "asset/asset-helpers.h"
 #include "asset/asset-import.h"
 #include "asset/asset-manager.h"
 #include "asset/csv.h"
-#include "asset/asset/asset-cam.h"
 #include "asset/logger.h"
 #include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
@@ -11,7 +12,6 @@
 #include <fty_asset_activator.h>
 #include <fty_common_asset.h>
 #include <fty_common_asset_types.h>
-#include <fty_common_mlm.h>
 
 namespace fty::asset {
 
@@ -64,14 +64,13 @@ unsigned Edit::run()
     }
 
     try {
-        fty::FullAsset asset;
-        si >>= asset;
+        FullAsset asset(si);
 
         if (asset.isPowerAsset() && asset.getStatusString() == "active") {
-            mlm::MlmSyncClient  client(AGENT_FTY_ASSET, AGENT_ASSET_ACTIVATOR);
-            fty::AssetActivator activationAccessor(client);
-            if (!activationAccessor.isActivable(asset)) {
-                throw std::runtime_error("Asset cannot be activated"_tr);
+            if (auto ret = activation::isActivable(asset)) {
+                if (!*ret) {
+                    throw std::runtime_error("Asset cannot be activated"_tr);
+                }
             }
         }
     } catch (const std::exception& e) {
