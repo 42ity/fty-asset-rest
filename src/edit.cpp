@@ -70,10 +70,14 @@ unsigned Edit::run()
         if (asset.isPowerAsset() && asset.getStatusString() == "active") {
             mlm::MlmSyncClient  client(AGENT_FTY_ASSET, AGENT_ASSET_ACTIVATOR);
             fty::AssetActivator activationAccessor(client);
-            if (!activationAccessor.isActivable(asset)) {
-                throw std::runtime_error("Asset cannot be activated"_tr);
+            if (asset.getStatusString() == "active") {
+                if (!activationAccessor.isActivable(asset)) {
+                    throw std::runtime_error("Asset cannot be activated"_tr);
+                }
+                activationAccessor.activate(asset);
+            } else {
+                activationAccessor.deactivate(asset);
             }
-            activationAccessor.activate(asset);
         }
     } catch (const std::exception& e) {
         auditError("Request CREATE OR UPDATE asset id {} FAILED"_tr, id);
