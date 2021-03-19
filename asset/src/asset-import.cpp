@@ -707,14 +707,18 @@ AssetExpected<db::AssetElement> Import::processRow(
                     trans.commit();
                 }
 
-                if (type == "device" && status == "active" && subtypeId != rackControllerId && checkLic) {
+                if (type == "device" && subtypeId != rackControllerId && checkLic) {
                     // check if we may activate the device
                     try {
                         std::string assetJson = getJsonAsset(el.id);
 
                         mlm::MlmSyncClient  client(AGENT_FTY_ASSET, AGENT_ASSET_ACTIVATOR);
                         fty::AssetActivator activationAccessor(client);
-                        activationAccessor.activate(assetJson);
+                        if (status == "active") {
+                            activationAccessor.activate(assetJson);
+                        } else {
+                            activationAccessor.deactivate(assetJson);
+                        }
                     } catch (const std::exception& e) {
                         return unexpected("licensing-err", e.what());
                     }
@@ -771,13 +775,17 @@ AssetExpected<db::AssetElement> Import::processRow(
                 trans.commit();
                 el.id = *ret;
 
-                if (type == "device" && status == "active" && subtypeId != rackControllerId && checkLic) {
+                if (type == "device" && subtypeId != rackControllerId && checkLic) {
                     // check if we may activate the device
                     try {
                         std::string         assetJson = getJsonAsset(el.id);
                         mlm::MlmSyncClient  client(AGENT_FTY_ASSET, AGENT_ASSET_ACTIVATOR);
                         fty::AssetActivator activationAccessor(client);
-                        activationAccessor.activate(assetJson);
+                        if (status == "active") {
+                            activationAccessor.activate(assetJson);
+                        } else {
+                            activationAccessor.deactivate(assetJson);
+                        }
                     } catch (const std::exception& e) {
                         return unexpected("licensing-err", e.what());
                     }
