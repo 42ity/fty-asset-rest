@@ -84,6 +84,7 @@ AssetExpected<uint32_t> AssetManager::createAsset(const std::string& json, const
                 if (!activationAccessor.isActivable(asset)) {
                     return unexpected(msg.format(itemName, "Asset cannot be activated"_tr));
                 }
+                activationAccessor.activate(asset);
             }
         } catch (const std::exception& e) {
             logError(e.what());

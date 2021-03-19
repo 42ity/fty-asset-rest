@@ -73,6 +73,7 @@ unsigned Edit::run()
             if (!activationAccessor.isActivable(asset)) {
                 throw std::runtime_error("Asset cannot be activated"_tr);
             }
+            activationAccessor.activate(asset);
         }
     } catch (const std::exception& e) {
         auditError("Request CREATE OR UPDATE asset id {} FAILED"_tr, id);
