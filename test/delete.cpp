@@ -54,3 +54,34 @@ TEST_CASE("Delete asset")
 
     deleteAsset(dc);
 }
+
+TEST_CASE("Delete asset / sensor")
+{
+    assets::DataCenter dc("datacenter");
+    dc.setExtAttributes({{"fast_track", "true"}});
+
+    {
+        assets::Ups ups("ups", dc);
+        ups.setActive(false);
+        assets::Sensor sensor("sensor", ups);
+        sensor.setActive(false);
+
+        auto ret = fty::asset::AssetManager::deleteAsset({{ups.id, ups.name}}, false);
+        CHECK(!ret.at(ups.name));
+
+        deleteAsset(sensor);
+        deleteAsset(ups);
+    }
+
+    // Corner case: remove child sensor if device has no parent and is inactive.
+    {
+        assets::Ups ups("ups");
+        ups.setActive(false);
+        assets::Sensor sensor("sensor", ups);
+        sensor.setActive(false);
+
+        auto ret = fty::asset::AssetManager::deleteAsset({{ups.id, ups.name}}, false);
+        CHECK(ret.at(ups.name));
+    }
+    deleteAsset(dc);
+}

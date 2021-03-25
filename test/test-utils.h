@@ -118,6 +118,17 @@ public:
         REQUIRE(*ret > 0);
     }
 
+    void setActive(bool active)
+    {
+        tnt::Connection conn;
+
+        auto ret = fty::asset::db::updateAssetElement(conn, id, parentId, active ? "active" : "inactive", priority, assetTag);
+        if (!ret) {
+            FAIL(ret.error());
+        }
+        REQUIRE(*ret > 0);
+    }
+
 private:
     void create()
     {
@@ -139,6 +150,8 @@ using Feed       = AssetElement<persist::DEVICE, persist::FEED>;
 using Row        = AssetElement<persist::ROW>;
 using Rack       = AssetElement<persist::RACK>;
 using Server     = AssetElement<persist::DEVICE, persist::SERVER>;
+using Ups        = AssetElement<persist::DEVICE, persist::UPS>;
+using Sensor     = AssetElement<persist::DEVICE, persist::SENSOR>;
 } // namespace assets
 
 inline void deleteAsset(const fty::asset::db::AssetElement& el)
