@@ -73,7 +73,7 @@ TEST_CASE("Delete asset / sensor")
         deleteAsset(ups);
     }
 
-    // Corner case: remove child sensor if device has no parent and is inactive.
+    // Corner case: remove child sensor if device has no parent and is nonactive.
     {
         assets::Ups ups("ups");
         ups.setActive(false);

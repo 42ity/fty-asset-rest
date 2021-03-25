@@ -122,7 +122,7 @@ public:
     {
         tnt::Connection conn;
 
-        auto ret = fty::asset::db::updateAssetElement(conn, id, parentId, active ? "active" : "inactive", priority, assetTag);
+        auto ret = fty::asset::db::updateAssetElement(conn, id, parentId, active ? "active" : "nonactive", priority, assetTag);
         if (!ret) {
             FAIL(ret.error());
         }

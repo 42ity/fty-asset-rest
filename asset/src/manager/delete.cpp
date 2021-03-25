@@ -141,11 +141,11 @@ AssetExpected<db::AssetElement> AssetManager::deleteAsset(const db::AssetElement
         }
     }
 
-    if (asset.typeId == persist::DEVICE && !asset.parentId && asset.status == "inactive") {
+    if (asset.typeId == persist::DEVICE && !asset.parentId && asset.status == "nonactive") {
         if (auto ret = db::selectAssetsByParent(asset.id)) {
             for(const auto& it: *ret) {
                 if (auto child = db::selectAssetElementWebById(it)) {
-                    if (child->typeId == persist::DEVICE && child->subtypeId == persist::SENSOR && child->status == "inactive") {
+                    if (child->typeId == persist::DEVICE && child->subtypeId == persist::SENSOR && child->status == "nonactive") {
                         deleteAsset(*child);
                     }
                 }
@@ -159,7 +159,7 @@ AssetExpected<db::AssetElement> AssetManager::deleteAsset(const db::AssetElement
         return unexpected("a logical_asset (sensor) refers to it"_tr);
     }
 
-    // make the device inactive first
+    // make the device nonactive first
     if (asset.status == "active" && sendNotify) {
         std::string asset_json = getJsonAsset(asset.id);
 
@@ -233,11 +233,11 @@ std::map<std::string, AssetExpected<db::AssetElement>> AssetManager::deleteAsset
             collectLinks(el->id, links, ids);
 
             if (!allChildren.empty()) {
-                if (el->typeId == persist::DEVICE && !el->parentId && el->status == "inactive") {
+                if (el->typeId == persist::DEVICE && !el->parentId && el->status == "nonactive") {
                     for(auto it = allChildren.begin(); it != allChildren.end(); ) {
                         bool erased = false;
                         if (auto child = db::selectAssetElementWebById(*it)) {
-                            if (child->typeId == persist::DEVICE && child->subtypeId == persist::SENSOR && child->status == "inactive") {
+                            if (child->typeId == persist::DEVICE && child->subtypeId == persist::SENSOR && child->status == "nonactive") {
                                 toDel.push_back(std::make_shared<Element>(*child));
                                 allChildren.erase(it);
                                 erased = true;
