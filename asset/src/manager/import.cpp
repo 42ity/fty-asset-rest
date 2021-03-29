@@ -32,7 +32,7 @@ static std::string sanitize(const std::string& csvStr)
         std::vector<std::string> outRow;
         for(size_t i = 0; i < row.length(); ++i) {
             char it = row[i];
-            if (i > 0 && row[i-1] != '\\' && (it == '\'' || it == '"')) {
+            if ((it == '\'' || it == '"') && ((i > 0 && row[i-1] != '\\') || i == 0)) {
                 if (!inQuota) {
                     inQuota = it;
                 } else if (inQuota == it) {
