@@ -424,7 +424,7 @@ AssetExpected<db::AssetElement> Import::processRow(
     std::vector<db::AssetLink> links;
     std::string                linkSource;
     for (int linkIndex = 1; true; linkIndex++) {
-        db::AssetLink oneLink;
+        db::AssetLink oneLink = {};
         std::string   linkColName = "";
         try {
             // column name
