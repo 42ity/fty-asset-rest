@@ -25,6 +25,14 @@ namespace fty::asset {
 //    return keys;
 //}
 
+static std::string strip(const std::string& st)
+{
+    std::regex re(R"(\\')");
+    std::regex re2(R"(\\")");
+
+    return std::regex_replace(std::regex_replace(st, re2, "\""), re, "'");
+}
+
 Import::Import(const CsvMap& cm)
     : m_cm(cm)
 {
@@ -75,7 +83,7 @@ std::map<std::string, std::string> Import::sanitizeRowExtNames(size_t row, bool 
                         break;
                     }
 
-                    auto name = db::extNameToAssetName(it->second);
+                    auto name = db::extNameToAssetName(strip(it->second));
                     if (!name) {
                         logError(name.error());
                     } else {
@@ -87,7 +95,7 @@ std::map<std::string, std::string> Import::sanitizeRowExtNames(size_t row, bool 
                 // simple name
                 auto it = result.find(item);
                 if (it != result.end()) {
-                    auto name = db::extNameToAssetName(it->second);
+                    auto name = db::extNameToAssetName(strip(it->second));
                     if (!name) {
                         logError(name.error());
                     } else {
@@ -264,7 +272,7 @@ AssetExpected<db::AssetElement> Import::processRow(
         m_operation = persist::asset_operation::UPDATE;
     }
 
-    auto ename = m_cm.get(row, "name");
+    auto ename = strip(m_cm.get(row, "name"));
     if (ename.empty()) {
         return unexpected(error(Errors::BadParams).format("name", "empty value"_tr, "unique, non empty value"_tr));
     }
@@ -314,7 +322,7 @@ AssetExpected<db::AssetElement> Import::processRow(
     }
     unusedColumns.erase("status");
 
-    auto assetTag = unusedColumns.count("asset_tag") ? m_cm.get(row, "asset_tag") : "";
+    auto assetTag = unusedColumns.count("asset_tag") ? strip(m_cm.get(row, "asset_tag")) : "";
     logDebug("asset_tag = '{}'", assetTag);
     if (assetTag.length() > 50) {
         std::string received = "too long string"_tr;
@@ -327,7 +335,7 @@ AssetExpected<db::AssetElement> Import::processRow(
     logDebug("priority = {}", priority);
     unusedColumns.erase("priority");
 
-    auto location = sanitizedAssetNames["location"];
+    auto location = strip(sanitizedAssetNames["location"]);
     logDebug("location = '{}'", location);
     uint32_t parentId = 0;
     if (!location.empty()) {
@@ -424,7 +432,7 @@ AssetExpected<db::AssetElement> Import::processRow(
     std::vector<db::AssetLink> links;
     std::string                linkSource;
     for (int linkIndex = 1; true; linkIndex++) {
-        db::AssetLink oneLink;
+        db::AssetLink oneLink = {};
         std::string   linkColName = "";
         try {
             // column name
@@ -432,7 +440,7 @@ AssetExpected<db::AssetElement> Import::processRow(
             // remove from unused
             unusedColumns.erase(linkColName);
             // take value
-            linkSource = sanitizedAssetNames.at(linkColName);
+            linkSource = strip(sanitizedAssetNames.at(linkColName));
         } catch (const std::out_of_range&) {
             break;
         }
