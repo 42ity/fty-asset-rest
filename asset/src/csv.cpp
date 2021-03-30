@@ -205,6 +205,7 @@ bool hasApostrof(std::istream& i)
     i.seekg(0);
     return false;
 }
+
 CsvMap CsvMap_from_istream(std::istream& in)
 {
     std::vector<std::vector<cxxtools::String>> data;
