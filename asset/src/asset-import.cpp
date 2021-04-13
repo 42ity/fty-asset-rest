@@ -695,6 +695,10 @@ AssetExpected<db::AssetElement> Import::processRow(
 
                 if (type == "device" && subtypeId != rackControllerId && checkLic) {
                     // check if we may activate the device
+                    if (subtypeId == persist::SENSOR && !parentId) {
+                        return unexpected("Cannot activate sensor without location");
+                    }
+
                     try {
                         std::string assetJson = getJsonAsset(el.id);
 
@@ -763,6 +767,10 @@ AssetExpected<db::AssetElement> Import::processRow(
 
                 if (type == "device" && subtypeId != rackControllerId && checkLic) {
                     // check if we may activate the device
+                    if (subtypeId == persist::SENSOR && !parentId) {
+                        return unexpected("Cannot activate sensor without location");
+                    }
+
                     try {
                         std::string         assetJson = getJsonAsset(el.id);
                         mlm::MlmSyncClient  client(AGENT_FTY_ASSET, AGENT_ASSET_ACTIVATOR);
