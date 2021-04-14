@@ -654,7 +654,7 @@ AssetExpected<db::AssetElement> Import::processRow(
 
     if (subtypeId == persist::SENSOR && type == "device") {
         if (!extattributes.count("logical_asset") || extattributes["logical_asset"].empty()) {
-            extattributes["logical_asset"] = convert<std::string>(parentId);
+            extattributes["logical_asset"] = location;
         }
     }
 
