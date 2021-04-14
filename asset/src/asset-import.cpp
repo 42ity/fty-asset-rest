@@ -674,6 +674,16 @@ AssetExpected<db::AssetElement> Import::processRow(
         }
     }
 
+    if (subtypeId == persist::SENSOR && type == "device") {
+        if (!extattributes.count("logical_asset") || extattributes["logical_asset"].empty()) {
+            if (auto ret = db::selectAssetElementWebById(parentId)) {
+                extattributes["logical_asset"] = ret->parentName;
+            } else {
+                return unexpected(ret.error());
+            }
+        }
+    }
+
     tnt::Connection conn;
 
     db::AssetElement el;
