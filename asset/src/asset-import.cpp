@@ -652,6 +652,12 @@ AssetExpected<db::AssetElement> Import::processRow(
         }
     }
 
+    if (subtypeId == persist::SENSOR && type == "device") {
+        if (!extattributes.count("logical_asset") || extattributes["logical_asset"].empty()) {
+            extattributes["logical_asset"] = convert<std::string>(parentId);
+        }
+    }
+
     tnt::Connection conn;
 
     db::AssetElement el;
@@ -695,10 +701,6 @@ AssetExpected<db::AssetElement> Import::processRow(
 
                 if (type == "device" && subtypeId != rackControllerId && checkLic) {
                     // check if we may activate the device
-                    if (subtypeId == persist::SENSOR && !parentId) {
-                        return unexpected("Cannot activate sensor without location");
-                    }
-
                     try {
                         std::string assetJson = getJsonAsset(el.id);
 
@@ -767,10 +769,6 @@ AssetExpected<db::AssetElement> Import::processRow(
 
                 if (type == "device" && subtypeId != rackControllerId && checkLic) {
                     // check if we may activate the device
-                    if (subtypeId == persist::SENSOR && !parentId) {
-                        return unexpected("Cannot activate sensor without location");
-                    }
-
                     try {
                         std::string         assetJson = getJsonAsset(el.id);
                         mlm::MlmSyncClient  client(AGENT_FTY_ASSET, AGENT_ASSET_ACTIVATOR);
