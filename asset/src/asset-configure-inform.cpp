@@ -26,6 +26,7 @@
 #include <fty_proto.h>
 #include <malamute.h>
 #include "asset/logger.h"
+#include <thread>
 
 namespace fty::asset {
 

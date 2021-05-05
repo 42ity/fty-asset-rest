@@ -21,6 +21,7 @@
 #include "asset/json.h"
 #include "asset/asset-computed.h"
 #include "asset/asset-manager.h"
+#include <cxxtools/regex.h>
 #include <fty/split.h>
 #include <fty_common.h>
 #include <fty_common_db_asset.h>

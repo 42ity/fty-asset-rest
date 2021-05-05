@@ -11,6 +11,7 @@
 #include <fty_asset_activator.h>
 #include <fty_common_asset.h>
 #include <fty_common_asset_types.h>
+#include <fty_common_agents.h>
 #include <fty_common_mlm.h>
 
 namespace fty::asset {

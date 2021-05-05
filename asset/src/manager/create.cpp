@@ -5,6 +5,8 @@
 #include "asset/csv.h"
 #include "asset/logger.h"
 #include <fty_asset_activator.h>
+#include <cxxtools/jsondeserializer.h>
+#include <fty_common_agents.h>
 #include <mutex>
 
 namespace fty::asset {

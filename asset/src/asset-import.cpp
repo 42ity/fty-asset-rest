@@ -8,6 +8,7 @@
 #include <fty/split.h>
 #include <fty_asset_activator.h>
 #include <fty_common_db_dbpath.h>
+#include <fty_common_agents.h>
 #include <fty_log.h>
 #include <regex>
 
