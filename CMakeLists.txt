@@ -44,6 +44,7 @@ etn_target(shared ${PROJECT_NAME}
         tntdb
         fty_common_rest
         fty_shm
+        fty-pack
         fty-asset
         fty-asset-libng
         fty_common_messagebus
