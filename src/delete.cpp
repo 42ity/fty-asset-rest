@@ -40,13 +40,13 @@ unsigned Delete::deleteOneAsset(const std::string& idStr)
         throw rest::errors::RequestParamBad("id", idStr, "valid asset name"_tr);
     }
 
-    Expected<int64_t> dbid = db::nameToAssetId(idStr);
+    Expected<uint32_t> dbid = db::nameToAssetId(idStr);
     if (!dbid) {
         auditError("Request DELETE asset id {} FAILED: {}"_tr, idStr, dbid.error());
         throw rest::errors::DbErr(dbid.error());
     }
 
-    auto res = AssetManager::deleteAsset(uint32_t(*dbid));
+    auto res = AssetManager::deleteAsset(*dbid);
     if (!res) {
         logError(res.error());
         std::string reason = "Asset is in use, remove children/power source links first."_tr;
