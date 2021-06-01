@@ -3,7 +3,7 @@
 #include "asset/asset-import.h"
 #include "asset/asset-manager.h"
 #include "asset/csv.h"
-#include "asset/asset/asset-cam.h"
+#include "asset/asset-cam.h"
 #include "asset/logger.h"
 #include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
