@@ -2,11 +2,10 @@
 #include "asset/asset-configure-inform.h"
 #include "asset/asset-db.h"
 #include "asset/asset-manager.h"
-#include "asset/logger.h"
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty/rest/translate.h>
-#include <fty/split.h>
+#include <fty/string-utils.h>
 #include <fty_common_asset_types.h>
 
 

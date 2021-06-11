@@ -1,5 +1,4 @@
 #include "actions-get.h"
-#include "asset/logger.h"
 #include "cxxtools/jsonserializer.h"
 #include <fty/rest/component.h>
 #include <fty_common_asset_types.h>
