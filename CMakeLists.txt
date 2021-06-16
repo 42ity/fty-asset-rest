@@ -47,6 +47,7 @@ etn_target(shared ${PROJECT_NAME}
         fty-pack
         fty-asset
         fty-asset-libng
+        fty_proto
         fty_common_messagebus
         fty_common
         fty_common_dto
