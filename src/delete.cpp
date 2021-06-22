@@ -1,7 +1,7 @@
 #include "delete.h"
-#include "asset/asset-configure-inform.h"
-#include "asset/asset-db.h"
-#include "asset/asset-manager.h"
+#include <asset/asset-configure-inform.h>
+#include <asset/asset-db.h>
+#include <asset/asset-manager.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty/rest/translate.h>

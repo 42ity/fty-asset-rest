@@ -1,5 +1,5 @@
 #include "import.h"
-#include "asset/asset-manager.h"
+#include <asset/asset-manager.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 

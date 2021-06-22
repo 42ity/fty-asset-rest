@@ -1,5 +1,5 @@
 #include "actions-post.h"
-#include "asset/asset-db.h"
+#include <asset/asset-db.h>
 #include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>

@@ -1,6 +1,6 @@
 #include "export.h"
-#include "asset/asset-db.h"
-#include "asset/asset-manager.h"
+#include <asset/asset-db.h>
+#include <asset/asset-manager.h>
 #include <chrono>
 #include <fty/rest/component.h>
 #include <fty_common_asset_types.h>

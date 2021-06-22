@@ -20,9 +20,9 @@
 */
 
 #include "read.h"
-#include "asset/asset-helpers.h"
-#include "asset/json.h"
-#include "asset/asset-db.h"
+#include <asset/asset-helpers.h>
+#include <asset/json.h>
+#include <asset/asset-db.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty_common_asset_types.h>

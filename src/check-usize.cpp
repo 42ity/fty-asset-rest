@@ -1,6 +1,6 @@
 #include "check-usize.h"
-#include "asset/asset-helpers.h"
-#include "asset/asset-db.h"
+#include <asset/asset-helpers.h>
+#include <asset/asset-db.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 
