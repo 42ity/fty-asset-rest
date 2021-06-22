@@ -3,16 +3,16 @@
 #include "asset/asset-import.h"
 #include "asset/asset-manager.h"
 #include "asset/csv.h"
-#include "asset/asset/asset-cam.h"
-#include "asset/logger.h"
+#include "asset/asset-cam.h"
 #include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
-#include <fty_asset_activator.h>
+
+#include <fty_common.h>
+//#include <fty_asset_activator.h>
 #include <fty_common_asset.h>
-#include <fty_common_asset_types.h>
-#include <fty_common_agents.h>
 #include <fty_common_mlm.h>
+#include <asset/asset-helpers.h>
 
 namespace fty::asset {
 
@@ -65,19 +65,17 @@ unsigned Edit::run()
     }
 
     try {
-        fty::FullAsset asset;
+        fty::FullAsset asset(si);
         si >>= asset;
 
         if (asset.isPowerAsset() && asset.getStatusString() == "active") {
-            mlm::MlmSyncClient  client(AGENT_FTY_ASSET, AGENT_ASSET_ACTIVATOR);
-            fty::AssetActivator activationAccessor(client);
+            if (!activation::isActivable(asset)) {
+                throw std::runtime_error("Asset cannot be activated"_tr);
+            }
             if (asset.getStatusString() == "active") {
-                if (!activationAccessor.isActivable(asset)) {
-                    throw std::runtime_error("Asset cannot be activated"_tr);
-                }
-                activationAccessor.activate(asset);
+                activation::activate(asset);
             } else {
-                activationAccessor.deactivate(asset);
+                activation::deactivate(asset);
             }
         }
     } catch (const std::exception& e) {

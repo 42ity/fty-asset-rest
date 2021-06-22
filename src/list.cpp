@@ -1,7 +1,7 @@
 #include "list.h"
 #include "asset/asset-db.h"
 #include "asset/asset-manager.h"
-#include <fty/split.h>
+#include <fty/string-utils.h>
 #include <fty_common_asset_types.h>
 #include <pack/pack.h>
 #include <fty/rest/component.h>

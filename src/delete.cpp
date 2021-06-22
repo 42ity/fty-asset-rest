@@ -2,11 +2,10 @@
 #include "asset/asset-configure-inform.h"
 #include "asset/asset-db.h"
 #include "asset/asset-manager.h"
-#include "asset/logger.h"
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty/rest/translate.h>
-#include <fty/split.h>
+#include <fty/string-utils.h>
 #include <fty_common_asset_types.h>
 
 
@@ -40,13 +39,13 @@ unsigned Delete::deleteOneAsset(const std::string& idStr)
         throw rest::errors::RequestParamBad("id", idStr, "valid asset name"_tr);
     }
 
-    Expected<int64_t> dbid = db::nameToAssetId(idStr);
+    Expected<uint32_t> dbid = db::nameToAssetId(idStr);
     if (!dbid) {
         auditError("Request DELETE asset id {} FAILED: {}"_tr, idStr, dbid.error());
         throw rest::errors::DbErr(dbid.error());
     }
 
-    auto res = AssetManager::deleteAsset(uint32_t(*dbid));
+    auto res = AssetManager::deleteAsset(*dbid);
     if (!res) {
         logError(res.error());
         std::string reason = "Asset is in use, remove children/power source links first."_tr;

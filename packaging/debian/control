@@ -19,7 +19,8 @@ Build-Depends:
     libfty-common-mlm-dev,
     libfty-proto-dev,
     libfty-shm-dev,
-    libcxxtools-dev
+    libcxxtools-dev,
+    libfty-asset-dev
 Standards-Version: 1.0.0
 Section: devel
 Priority: extra

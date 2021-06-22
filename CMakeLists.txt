@@ -10,7 +10,7 @@ project(fty-asset-rest
 ########################################################################################################################
 find_package(fty-cmake PATHS ${CMAKE_BINARY_DIR}/fty-cmake)
 ########################################################################################################################
-add_subdirectory(asset)
+#add_subdirectory(asset)
 ########################################################################################################################
 
 etn_target(shared ${PROJECT_NAME}
@@ -39,10 +39,17 @@ etn_target(shared ${PROJECT_NAME}
         src/check-usize.h
     USES
         fty-cmake-rest
+        cxxtools
         tntnet
+        tntdb
         fty_common_rest
-        fty-asset-lib
+        fty_shm
+        fty-pack
+        fty-asset
+        fty-asset-libng
+        fty_proto
         fty_common_messagebus
+        fty_common
         fty_common_dto
     TARGET_DESTINATION /usr/lib/bios
 )
@@ -60,6 +67,6 @@ etn_configure_file(
 ########################################################################################################################
 
 if (BUILD_TESTING)
-    add_subdirectory(test)
+    #add_subdirectory(test)
 endif()
 
