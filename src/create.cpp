@@ -20,16 +20,19 @@
 */
 
 #include "create.h"
-#include <fty/rest/audit-log.h>
-#include <fty/rest/component.h>
+#include <asset/asset-computed.h>
 #include <asset/asset-manager.h>
 #include <asset/json.h>
-#include <asset/asset-computed.h>
+#include <cxxtools/jsondeserializer.h>
+#include <cxxtools/jsonserializer.h>
+#include <fty/rest/audit-log.h>
+#include <fty/rest/component.h>
 #include <fty/string-utils.h>
 #include <fty_common.h>
 #include <fty_common_db_asset.h>
 #include <fty_common_rest.h>
 #include <fty_shm.h>
+#include <vector>
 
 namespace fty::asset {
 
@@ -40,27 +43,52 @@ unsigned Create::run()
         throw rest::Error(ret.error());
     }
 
-    std::string assetJson = m_request.body();
+    // std::string       assetJson = m_request.body();
+    cxxtools::SerializationInfo si;
+    std::vector<std::string>    assets;
+    std::stringstream           jsonIn;
+    jsonIn << m_request.body();
 
-    auto ret = AssetManager::createAsset(assetJson, user.login());
-    if (!ret) {
-        auditError(ret.error());
-        throw rest::errors::Internal(ret.error());
+    cxxtools::JsonDeserializer deserializer(jsonIn);
+    deserializer.deserialize(si);
+
+    if (si.findMember("assets")) {
+        auto assetsJsonList = si.getMember("assets");
+        for (auto it = assetsJsonList.begin(); it != assetsJsonList.end(); ++it) {
+            std::ostringstream assetJson;
+
+            cxxtools::JsonSerializer serializer(assetJson);
+
+            serializer.serialize(*it);
+            assets.push_back(assetJson.str());
+        }
+    } else {
+        assets.push_back(jsonIn.str());
     }
 
-    auto createdAsset = AssetManager::getItem(*ret);
+    pack::StringList createdName;
+    bool             someOk = false;
+    for (const auto& asset : assets) {
+        auto ret = AssetManager::createAsset(asset, user.login());
+        if (!ret) {
+            auditError(ret.error());
+            continue;
+        }
 
-    if (!createdAsset) {
-        auditError(createdAsset.error());
-        throw rest::errors::Internal(createdAsset.error());        
-    } 
+        auto createdAsset = AssetManager::getItem(*ret);
 
-    m_reply << "{ " << utils::json::jsonify("id", createdAsset->name) << " }\n\n";
+        if (!createdAsset) {
+            auditError(createdAsset.error());
+            continue;
+        }
 
-    auditInfo("Request CREATE asset id {} SUCCESS"_tr, createdAsset->name);
+        createdName.append(createdAsset->name);
+        auditInfo("Request CREATE asset id {} SUCCESS"_tr, createdAsset->name);
+        someOk = true;
+    }
+    m_reply << *pack::json::serialize(createdName) << "\n\n";
 
-
-    return HTTP_OK;
+    return someOk ? HTTP_OK : HTTP_CONFLICT;
 }
 
 } // namespace fty::asset
