@@ -43,15 +43,15 @@ unsigned Create::run()
         throw rest::Error(ret.error());
     }
 
-    // std::string       assetJson = m_request.body();
-    cxxtools::SerializationInfo si;
-    std::vector<std::string>    assets;
-    std::stringstream           jsonIn;
-    jsonIn << m_request.body();
+
+    std::stringstream jsonIn(m_request.body());
 
     cxxtools::JsonDeserializer deserializer(jsonIn);
+
+    cxxtools::SerializationInfo si;
     deserializer.deserialize(si);
 
+    std::vector<std::string> assets;
     if (si.findMember("assets")) {
         auto assetsJsonList = si.getMember("assets");
         for (auto it = assetsJsonList.begin(); it != assetsJsonList.end(); ++it) {
@@ -78,7 +78,7 @@ unsigned Create::run()
         auto createdAsset = AssetManager::getItem(*ret);
 
         if (!createdAsset) {
-            auditError(createdAsset.error());
+            auditError("Request CREATE asset FAILED with error: {}",createdAsset.error());
             continue;
         }
 
