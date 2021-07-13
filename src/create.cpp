@@ -24,7 +24,6 @@
 #include <asset/asset-manager.h>
 #include <asset/json.h>
 #include <cxxtools/jsondeserializer.h>
-#include <cxxtools/jsonserializer.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty/string-utils.h>
@@ -43,49 +42,58 @@ unsigned Create::run()
         throw rest::Error(ret.error());
     }
 
-
-    std::stringstream jsonIn(m_request.body());
-
-    cxxtools::JsonDeserializer deserializer(jsonIn);
-
     cxxtools::SerializationInfo si;
-    deserializer.deserialize(si);
+    std::stringstream           jsonIn;
+    try {
+        jsonIn << m_request.body();
+        cxxtools::JsonDeserializer deserializer(jsonIn);
+        deserializer.deserialize(si);
+    } catch (const std::exception& e) {
+        logError(e.what());
+        return HTTP_CONFLICT;
+    }
 
-    std::vector<std::string> assets;
+    bool             someOk = false;
+    pack::StringList createdName;
     if (si.findMember("assets")) {
         auto assetsJsonList = si.getMember("assets");
         for (auto it = assetsJsonList.begin(); it != assetsJsonList.end(); ++it) {
-            std::ostringstream assetJson;
 
-            cxxtools::JsonSerializer serializer(assetJson);
+            auto ret = AssetManager::createAsset(*it, user.login());
+            if (!ret) {
+                auditError(ret.error());
+                continue;
+            }
 
-            serializer.serialize(*it);
-            assets.push_back(assetJson.str());
+            auto createdAsset = AssetManager::getItem(*ret);
+
+            if (!createdAsset) {
+                auditError(createdAsset.error());
+                continue;
+            }
+
+            createdName.append(createdAsset->name);
+            auditInfo("Request CREATE asset id {} SUCCESS"_tr, createdAsset->name);
+            someOk = true;
         }
     } else {
-        assets.push_back(jsonIn.str());
-    }
-
-    pack::StringList createdName;
-    bool             someOk = false;
-    for (const auto& asset : assets) {
-        auto ret = AssetManager::createAsset(asset, user.login());
+        auto ret = AssetManager::createAsset(jsonIn.str(), user.login());
         if (!ret) {
             auditError(ret.error());
-            continue;
+            return HTTP_CONFLICT;
         }
 
         auto createdAsset = AssetManager::getItem(*ret);
 
         if (!createdAsset) {
-            auditError("Request CREATE asset FAILED with error: {}",createdAsset.error());
-            continue;
+            auditError(createdAsset.error());
         }
 
         createdName.append(createdAsset->name);
         auditInfo("Request CREATE asset id {} SUCCESS"_tr, createdAsset->name);
         someOk = true;
     }
+
     m_reply << *pack::json::serialize(createdName) << "\n\n";
 
     return someOk ? HTTP_OK : HTTP_CONFLICT;
