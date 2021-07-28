@@ -20,17 +20,10 @@
 */
 
 #include "create.h"
-#include <asset/asset-computed.h>
 #include <asset/asset-manager.h>
-#include <asset/json.h>
 #include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
-#include <fty/string-utils.h>
-#include <fty_common.h>
-#include <fty_common_db_asset.h>
-#include <fty_common_rest.h>
-#include <fty_shm.h>
 
 namespace fty::asset {
 
@@ -47,43 +40,51 @@ unsigned Create::run()
         cxxtools::JsonDeserializer deserializer(jsonIn);
         deserializer.deserialize(si);
     } catch (const std::exception& e) {
-        logError(e.what());
+        auditError(e.what());
         throw rest::errors::Internal(e.what());
-    }
-
-    cxxtools::SerializationInfo assetsJsonList;
-    if (si.findMember("assets")) {
-        assetsJsonList = si.getMember("assets");
-    } else {
-        assetsJsonList.addMember(m_request.body());
     }
 
     bool             someOk = false;
     pack::StringList createdName;
-    for (const auto& it : assetsJsonList) {
-        auto ret = AssetManager::createAsset(it, user.login());
-        if (!ret) {
-            auditError(ret.error());
-            continue;
-        }
-
-        auto createdAsset = fty::asset::db::idToNameExtName(*ret);
+    auto             validate = [&](const uint32_t& id) {
+        auto createdAsset = fty::asset::db::idToNameExtName(id);
 
         if (!createdAsset) {
             auditError(createdAsset.error());
-            continue;
+            return;
         }
 
         createdName.append(createdAsset->first.c_str());
         auditInfo("Request CREATE asset id {} SUCCESS"_tr, createdAsset->first.c_str());
         someOk = true;
-    }
+    };
 
-    m_reply << *pack::json::serialize(createdName) << "\n\n";
+    cxxtools::SerializationInfo assetsJsonList;
+    if (si.findMember("assets")) {
+        assetsJsonList = si.getMember("assets");
+
+        for (const auto& it : assetsJsonList) {
+            auto ret = AssetManager::createAsset(it, user.login());
+            if (!ret) {
+                auditError(ret.error());
+                continue;
+            }
+            validate(*ret);
+        }
+    } else {
+        auto ret = AssetManager::createAsset(si, user.login());
+        if (!ret) {
+            auditError(ret.error());
+        } else {
+            validate(*ret);
+        }
+    }
 
     if (!someOk) {
         throw rest::errors::Internal("Some of assets creation FAILED");
     }
+
+    m_reply << *pack::json::serialize(createdName) << "\n\n";
 
     return HTTP_OK;
 }
