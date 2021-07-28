@@ -30,9 +30,9 @@ namespace fty::asset {
 unsigned Create::run()
 {
     rest::User user(m_request);
-    if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
+    /*if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
         throw rest::Error(ret.error());
-    }
+    }*/
 
     cxxtools::SerializationInfo si;
     try {
@@ -44,9 +44,8 @@ unsigned Create::run()
         throw rest::errors::Internal(e.what());
     }
 
-    bool             someOk = false;
     pack::StringList createdName;
-    auto             validate = [&](const uint32_t& id) {
+    auto             validateAndAppend = [&](const uint32_t& id) {
         auto createdAsset = fty::asset::db::idToNameExtName(id);
 
         if (!createdAsset) {
@@ -55,8 +54,7 @@ unsigned Create::run()
         }
 
         createdName.append(createdAsset->first);
-        auditInfo("Request CREATE asset id {} SUCCESS"_tr, createdAsset->first.c_str());
-        someOk = true;
+        auditInfo("Request CREATE asset id {} SUCCESS"_tr, createdAsset->first);
     };
 
     cxxtools::SerializationInfo assetsJsonList;
@@ -69,18 +67,18 @@ unsigned Create::run()
                 auditError(ret.error());
                 continue;
             }
-            validate(*ret);
+            validateAndAppend(*ret);
         }
     } else {
         auto ret = AssetManager::createAsset(si, user.login());
         if (!ret) {
             auditError(ret.error());
         } else {
-            validate(*ret);
+            validateAndAppend(*ret);
         }
     }
 
-    if (!someOk) {
+    if (!createdName.hasValue()) {
         throw rest::errors::Internal("Some of assets creation FAILED");
     }
 
