@@ -30,9 +30,9 @@ namespace fty::asset {
 unsigned Create::run()
 {
     rest::User user(m_request);
-    /*if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
+    if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
         throw rest::Error(ret.error());
-    }*/
+    }
 
     cxxtools::SerializationInfo si;
     try {
