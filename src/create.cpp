@@ -54,7 +54,7 @@ unsigned Create::run()
             return;
         }
 
-        createdName.append(createdAsset->first.c_str());
+        createdName.append(createdAsset->first);
         auditInfo("Request CREATE asset id {} SUCCESS"_tr, createdAsset->first.c_str());
         someOk = true;
     };
