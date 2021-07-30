@@ -25,7 +25,7 @@ unsigned CheckUSize::run()
     }
 
     if (m_request.type() != rest::Request::Type::Post) {
-        throw rest::errors::MethodNotAllowed(m_request.typeStr());
+        throw rest::errors::MethodNotAllowed(m_request.type());
     }
 
     std::string json = m_request.body();
