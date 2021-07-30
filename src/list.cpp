@@ -25,7 +25,7 @@ unsigned List::run()
     }
 
     if (m_request.type() != rest::Request::Type::Get) {
-        throw rest::errors::MethodNotAllowed(m_request.type());
+        throw rest::errors::MethodNotAllowed(m_request.typeStr());
     }
 
     Expected<std::string> assetType    = m_request.queryArg<std::string>("type");
