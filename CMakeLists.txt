@@ -21,6 +21,8 @@ etn_target(shared ${PROJECT_NAME}
         src/create.h
         src/list.cpp
         src/list.h
+        src/list-in.cpp
+        src/list-in.h
         src/delete.cpp
         src/delete.h
         src/import.cpp

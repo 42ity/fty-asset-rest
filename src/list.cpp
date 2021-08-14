@@ -20,15 +20,7 @@ struct Info : public pack::Node
 unsigned List::run()
 {
     static const std::set<std::string> possibleOrders = {
-        "name",
-        "model",
-        "create_ts",
-        "firmware",
-        "max_power",
-        "serial_no",
-        "update_ts",
-        "asset_order"
-    };
+        "name", "model", "create_ts", "firmware", "max_power", "serial_no", "update_ts", "asset_order"};
 
     rest::User user(m_request);
     if (auto ret = checkPermissions(user.profile(), m_permissions); !ret) {
@@ -63,7 +55,7 @@ unsigned List::run()
     }
 
     std::string order;
-    OrderDir dir = OrderDir::Asc;
+    OrderDir    dir = OrderDir::Asc;
 
     if (orderBy) {
         if (auto find = possibleOrders.find(*orderBy); find == possibleOrders.end()) {
@@ -83,7 +75,8 @@ unsigned List::run()
     }
 
     pack::Map<pack::ObjectList<Info>> ret;
-    auto&                             val = ret.append(*assetType + "s");
+
+    auto& val = ret.append(*assetType + "s");
 
     // Get data
     auto allAssetsShort = AssetManager::getItems(*assetType, subtypes, order, dir);
