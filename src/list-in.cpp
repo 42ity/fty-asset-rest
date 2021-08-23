@@ -81,17 +81,21 @@ using AssetDetails = pack::ObjectList<AssetDetail>;
 // =========================================================================================================================================
 
 static Assets assetsInContainer(
-    fty::db::Connection& conn, uint32_t container, const db::asset::select::Filter& filter, const std::vector<std::string>& capabilities)
+    fty::db::Connection&             conn,
+    uint32_t                         container,
+    const db::asset::select::Filter& filter,
+    const db::asset::select::Order&  order,
+    const std::vector<std::string>&  capabilities)
 {
     Assets result;
 
     auto func = [&](const fty::db::Row& row) {
-        uint32_t asset_id = row.get<uint32_t>("asset_id");
+        uint32_t assetId = row.get<uint32_t>("id");
 
         // search capabilities if present in filter
         auto keyTag = [&](const std::string& value) {
             std::string capability = fmt::format("capability.{}", value);
-            if (auto ret = db::asset::countKeytag(conn, capability, "yes", asset_id)) {
+            if (auto ret = db::asset::countKeytag(conn, capability, "yes", assetId)) {
                 return *ret > 0;
             } else {
                 return false;
@@ -102,27 +106,22 @@ static Assets assetsInContainer(
 
         // add element if no capabilities present or if capabilites present and all of them not found
         if (capabilities.empty() || itCap == capabilities.end()) {
-            auto assetNames = db::asset::idToNameExtName(conn, row.get<uint32_t>("asset_id"));
-            if (!assetNames) {
-                throw rest::errors::Internal("Database failure"_tr);
-            }
-
             auto& asset = result.append();
 
             asset.id      = row.get("name");
-            asset.name    = assetNames->extName;
-            asset.type    = persist::typeid_to_type(row.get<uint16_t>("type_id"));
-            asset.subType = persist::subtypeid_to_subtype(row.get<uint16_t>("subtype_id"));
+            asset.name    = row.get("extName");
+            asset.type    = row.get("typeName");
+            asset.subType = row.get("subTypeName");
         }
     };
 
     if (container) {
-        auto list = db::asset::select::itemsByContainer(conn, container, func, filter);
+        auto list = db::asset::select::itemsByContainer(conn, container, func, filter, order);
         if (!list) {
             throw rest::errors::Internal(list.error());
         }
     } else {
-        auto list = db::asset::select::items(conn, func, filter);
+        auto list = db::asset::select::items(conn, func, filter, order);
         if (!list) {
             throw rest::errors::Internal(list.error());
         }
@@ -243,7 +242,7 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
                 ext.erase("type");
             }
         } else {
-            subTypeName = persist::subtypeid_to_subtype(info->subtypeId);
+            subTypeName = info->subtypeName;
         }
         if (subTypeName == "N_A") {
             subTypeName = "";
@@ -427,7 +426,16 @@ unsigned ListIn::run()
         flt.status = status;
     }
 
-    auto assets = assetsInContainer(conn, containerId(), flt, capabilities());
+    db::asset::select::Order order;
+    if (auto by = m_request.queryArg<std::string>("order_by")) {
+        order.field = by;
+    }
+    if (auto dir = m_request.queryArg<std::string>("order_dir")) {
+        order.dir = *dir == "ASC" ? db::asset::select::Order::Dir::Asc : db::asset::select::Order::Dir::Desc;
+    }
+
+
+    auto assets = assetsInContainer(conn, containerId(), flt, order, capabilities());
 
     if (details && *details) {
         AssetDetails list;
