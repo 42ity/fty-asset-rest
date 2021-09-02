@@ -333,11 +333,8 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
 uint32_t ListIn::containerId() const
 {
     auto id = m_request.queryArg<std::string>("in");
-    if (!id) {
-        throw rest::errors::RequestParamRequired("in");
-    }
 
-    if (id->empty()) {
+    if (!id || id->empty()) {
         return 0;
     }
 
@@ -423,12 +420,12 @@ unsigned ListIn::run()
         flt.without = *without;
     }
     if (auto status = m_request.queryArg<std::string>("status")) {
-        flt.status = status;
+        flt.status = *status;
     }
 
     db::asset::select::Order order;
     if (auto by = m_request.queryArg<std::string>("orderBy")) {
-        order.field = by;
+        order.field = *by;
     }
     if (auto dir = m_request.queryArg<std::string>("order")) {
         order.dir = *dir == "ASC" ? db::asset::select::Order::Dir::Asc : db::asset::select::Order::Dir::Desc;
