@@ -427,10 +427,10 @@ unsigned ListIn::run()
     }
 
     db::asset::select::Order order;
-    if (auto by = m_request.queryArg<std::string>("order_by")) {
+    if (auto by = m_request.queryArg<std::string>("orderBy")) {
         order.field = by;
     }
-    if (auto dir = m_request.queryArg<std::string>("order_dir")) {
+    if (auto dir = m_request.queryArg<std::string>("order")) {
         order.dir = *dir == "ASC" ? db::asset::select::Order::Dir::Asc : db::asset::select::Order::Dir::Desc;
     }
 

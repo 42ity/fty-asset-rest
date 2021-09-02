@@ -33,7 +33,7 @@ unsigned List::run()
 
     Expected<std::string> assetType = m_request.queryArg<std::string>("type");
     Expected<std::string> subtype   = m_request.queryArg<std::string>("subtype");
-    Expected<std::string> orderBy   = m_request.queryArg<std::string>("order_by");
+    Expected<std::string> orderBy   = m_request.queryArg<std::string>("orderBy");
     Expected<std::string> orderDir  = m_request.queryArg<std::string>("order");
 
     if (!assetType) {
@@ -59,7 +59,7 @@ unsigned List::run()
 
     if (orderBy) {
         if (auto find = possibleOrders.find(*orderBy); find == possibleOrders.end()) {
-            throw rest::errors::RequestParamBad("order_by", *orderBy, implode(possibleOrders, "/"));
+            throw rest::errors::RequestParamBad("orderBy", *orderBy, implode(possibleOrders, "/"));
         } else {
             order = *orderBy;
         }
