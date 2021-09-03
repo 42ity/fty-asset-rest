@@ -79,7 +79,7 @@ unsigned Edit::run()
             }
         }
     } catch (const std::exception& e) {
-        auditError("Request CREATE OR UPDATE asset id {} FAILED"_tr, id);
+        auditError("Request CREATE OR UPDATE asset id {} FAILED"_tr, *id);
         throw rest::errors::LicensingErr(e.what());
     }
 
