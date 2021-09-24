@@ -1,18 +1,17 @@
 #include "edit.h"
+#include <asset/asset-cam.h>
 #include <asset/asset-configure-inform.h>
 #include <asset/asset-import.h>
 #include <asset/asset-manager.h>
 #include <asset/csv.h>
-#include <asset/asset-cam.h>
 #include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
-
 #include <fty_common.h>
 //#include <fty_asset_activator.h>
+#include <asset/asset-helpers.h>
 #include <fty_common_asset.h>
 #include <fty_common_mlm.h>
-#include <asset/asset-helpers.h>
 
 namespace fty::asset {
 
@@ -88,9 +87,9 @@ unsigned Edit::run()
         cm = CsvMap_from_serialization_info(si);
         cm.setUpdateUser(user.login());
         std::time_t timestamp = std::time(nullptr);
-        std::string mbstr(100, '\0');
-        if (std::strftime(&mbstr[0], sizeof(mbstr), "%FT%T%z", std::localtime(&timestamp))) {
-            cm.setUpdateTs(mbstr);
+        char        timeString[100];
+        if (std::strftime(timeString, sizeof(timeString), "%FT%T%z", std::localtime(&timestamp))) {
+            cm.setUpdateTs(timeString);
         }
     } catch (const std::invalid_argument& e) {
         logError(e.what());
