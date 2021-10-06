@@ -1,3 +1,18 @@
+<!-- Asset management -->
+<!-- list of asset by container -->
+<mapping>
+  <target>asset/list-in@lib${NAME}</target>
+  <url>^/api/v1/assets($|/$)</url>
+</mapping>
+
+<!-- Counters on asset -->
+<mapping>
+  <target>asset/list-in/counter@lib${NAME}</target>
+  <url2>^/api/v1/asset-counters(\?[^\/]+)+$</url2>
+  <url>^/api/v1/asset-counters</url>
+  <method>GET</method>
+</mapping>
+
 <mapping>
   <target>asset/list@lib${NAME}</target>
   <url>^/api/v1/asset/(datacenter|room|row|rack|group|device)s.*$</url>
