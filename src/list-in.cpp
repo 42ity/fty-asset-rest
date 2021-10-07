@@ -299,7 +299,7 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
     }
 
     for (const auto& [oNumber, outlet] : outlets) {
-        AssetDetail::OutletList list = asset.outlets.append(oNumber);
+        AssetDetail::OutletList& list = asset.outlets.append(oNumber);
 
         {
             auto& out = list.append();
