@@ -290,6 +290,7 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
 
         if (key.find("ip.") == 0) {
             asset.ips.append(value.value);
+            continue;
         }
 
         auto& attr = asset.ext.append();
