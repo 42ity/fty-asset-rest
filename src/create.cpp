@@ -20,8 +20,10 @@
 */
 
 #include "create.h"
+#include "messagebus/notifications.h"
 #include <asset/asset-manager.h>
 #include <cxxtools/jsondeserializer.h>
+#include <cxxtools/jsonserializer.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 
@@ -68,6 +70,42 @@ unsigned Create::run()
                 continue;
             }
             validateAndAppend(*ret);
+
+            std::ostringstream output;
+
+            if (auto names = db::idToNameExtName(*ret)) {
+                if (auto asset = AssetManager::getDto(names->first)) {
+
+                    notification::created::PayloadFull  full  = *asset;
+                    notification::created::PayloadLight light = asset->name;
+
+                    // full notification
+                    if (auto json = pack::json::serialize(full, pack::Option::WithDefaults)) {
+                        if (auto send =
+                                sendStreamNotification(notification::created::Topic::Full, notification::created::Subject::Full, *json);
+                            !send) {
+                            log_error("Failed to send create notification: %s", send.error().c_str());
+                        }
+                    } else {
+                        log_error("Failed to serialize notification payload: %s", json.error().c_str());
+                    }
+
+                    // light notification
+                    if (auto json = pack::json::serialize(light, pack::Option::WithDefaults)) {
+                        if (auto send =
+                                sendStreamNotification(notification::created::Topic::Light, notification::created::Subject::Light, *json);
+                            !send) {
+                            log_error("Failed to send create light notification: %s", send.error().c_str());
+                        }
+                    } else {
+                        log_error("Failed to serialize notification light payload: %s", json.error().c_str());
+                    }
+                } else {
+                    log_error("Failed to get asset DTO: %s", asset.error().message().c_str());
+                }
+            } else {
+                log_error("Failed to get asset iname: %s", names.error().c_str());
+            }
         }
     } else {
         auto ret = AssetManager::createAsset(si, user.login());
@@ -75,6 +113,40 @@ unsigned Create::run()
             auditError(ret.error());
         } else {
             validateAndAppend(*ret);
+
+            if (auto names = db::idToNameExtName(*ret)) {
+                if (auto asset = AssetManager::getDto(names->first)) {
+
+                    notification::created::PayloadFull  full  = *asset;
+                    notification::created::PayloadLight light = asset->name;
+
+                    // full notification
+                    if (auto json = pack::json::serialize(full, pack::Option::WithDefaults)) {
+                        if (auto send =
+                                sendStreamNotification(notification::created::Topic::Full, notification::created::Subject::Full, *json);
+                            !send) {
+                            log_error("Failed to send create notification: %s", send.error().c_str());
+                        }
+                    } else {
+                        log_error("Failed to serialize notification payload: %s", json.error().c_str());
+                    }
+
+                    // light notification
+                    if (auto json = pack::json::serialize(light, pack::Option::WithDefaults)) {
+                        if (auto send =
+                                sendStreamNotification(notification::created::Topic::Light, notification::created::Subject::Light, *json);
+                            !send) {
+                            log_error("Failed to send create light notification: %s", send.error().c_str());
+                        }
+                    } else {
+                        log_error("Failed to serialize notification light payload: %s", json.error().c_str());
+                    }
+                } else {
+                    log_error("Failed to get asset DTO: %s", asset.error().message().c_str());
+                }
+            } else {
+                log_error("Failed to get asset iname: %s", names.error().c_str());
+            }
         }
     }
 
