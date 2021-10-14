@@ -37,12 +37,6 @@ etn_target(shared ${PROJECT_NAME}
         src/actions-post.h
         src/check-usize.cpp
         src/check-usize.h
-        src/messagebus/notifications.h
-        src/messagebus/notifications.cpp
-        src/messagebus/message.cpp
-        src/messagebus/message.h
-        src/messagebus/message-bus.cpp
-        src/messagebus/message-bus.h
     USES
         fty-cmake-rest
         cxxtools

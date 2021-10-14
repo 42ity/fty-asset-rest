@@ -20,8 +20,8 @@
 */
 
 #include "create.h"
-#include "messagebus/notifications.h"
 #include <asset/asset-manager.h>
+#include <asset/asset-notifications.h>
 #include <cxxtools/jsondeserializer.h>
 #include <cxxtools/jsonserializer.h>
 #include <fty/rest/audit-log.h>

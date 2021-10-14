@@ -1,9 +1,9 @@
 #include "edit.h"
-#include "messagebus/notifications.h"
 #include <asset/asset-cam.h>
 #include <asset/asset-configure-inform.h>
 #include <asset/asset-import.h>
 #include <asset/asset-manager.h>
+#include <asset/asset-notifications.h>
 #include <asset/csv.h>
 #include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>

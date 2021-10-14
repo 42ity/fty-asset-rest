@@ -1,8 +1,8 @@
 #include "delete.h"
-#include "messagebus/notifications.h"
 #include <asset/asset-configure-inform.h>
 #include <asset/asset-db.h>
 #include <asset/asset-manager.h>
+#include <asset/asset-notifications.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty/rest/translate.h>
