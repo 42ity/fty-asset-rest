@@ -2,6 +2,7 @@
 #include <asset/asset-configure-inform.h>
 #include <asset/asset-db.h>
 #include <asset/asset-manager.h>
+#include <asset/asset-notifications.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty/rest/translate.h>
@@ -45,6 +46,8 @@ unsigned Delete::deleteOneAsset(const std::string& idStr)
         throw rest::errors::DbErr(dbid.error());
     }
 
+    auto dto = AssetManager::getDto(idStr);
+
     auto res = AssetManager::deleteAsset(*dbid);
     if (!res) {
         logError(res.error());
@@ -57,12 +60,40 @@ unsigned Delete::deleteOneAsset(const std::string& idStr)
     if (auto ret = sendConfigure(*res, persist::asset_operation::DELETE, agent_name)) {
         m_reply << "{}";
         auditInfo("Request DELETE asset id {} SUCCESS", idStr);
+
+        if (dto) {
+
+            notification::deleted::PayloadFull  full  = *dto;
+            notification::deleted::PayloadLight light = dto->name;
+
+            // full notification
+            if (auto json = pack::json::serialize(full, pack::Option::WithDefaults)) {
+                if (auto send = sendStreamNotification(notification::deleted::Topic::Full, notification::deleted::Subject::Full, *json);
+                    !send) {
+                    log_error("Failed to send delete notification: %s", send.error().c_str());
+                }
+            } else {
+                log_error("Failed to serialize notification payload: %s", json.error().c_str());
+            }
+
+            // light notification
+            if (auto json = pack::json::serialize(light, pack::Option::WithDefaults)) {
+                if (auto send = sendStreamNotification(notification::deleted::Topic::Light, notification::deleted::Subject::Light, *json);
+                    !send) {
+                    log_error("Failed to send delete light notification: %s", send.error().c_str());
+                }
+            } else {
+                log_error("Failed to serialize notification light payload: %s", json.error().c_str());
+            }
+        } else {
+            log_error("Failed to get asset DTO: %s", dto.error().message().c_str());
+        }
+
         return HTTP_OK;
     } else {
         logError(ret.error());
         auditError("Request DELETE asset id {} FAILED"_tr, idStr);
-        throw rest::errors::Internal(
-            "Error during configuration sending of asset change notification. Consult system log."_tr);
+        throw rest::errors::Internal("Error during configuration sending of asset change notification. Consult system log."_tr);
     }
 }
 
@@ -80,6 +111,8 @@ unsigned Delete::deleteAssets(const std::string& idsStr)
 {
     std::vector<std::string> ids = fty::split(idsStr, ",");
 
+    std::map<std::string, Dto> dtos;
+
     for (const auto& id : ids) {
         if (!persist::is_ok_name(id.c_str())) {
             auditError("Request DELETE asset id {} FAILED", id);
@@ -91,6 +124,11 @@ unsigned Delete::deleteAssets(const std::string& idsStr)
     for (const auto& id : ids) {
         if (auto dbid = db::nameToAssetId(id)) {
             dbIds.emplace(*dbid, id);
+            if (auto dto = AssetManager::getDto(id)) {
+                dtos[id] = *dto;
+            } else {
+                log_error("Failed to get asset DTO: %s", dto.error().message().c_str());
+            }
         } else {
             logError(dbid.error());
             auditError("Request DELETE asset id {} FAILED", id);
@@ -105,6 +143,32 @@ unsigned Delete::deleteAssets(const std::string& idsStr)
         if (asset) {
             someAreOk = true;
             auditInfo("Request DELETE asset id {} SUCCESS", asset->id);
+            if (auto found = dtos.find(name); found != dtos.end()) {
+
+                notification::deleted::PayloadFull full = found->second;
+
+                // full notification
+                if (auto json = pack::json::serialize(full, pack::Option::WithDefaults)) {
+                    if (auto send = sendStreamNotification(notification::deleted::Topic::Full, notification::deleted::Subject::Full, *json);
+                        !send) {
+                        log_error("Failed to send delete notification: %s", send.error().c_str());
+                    }
+                } else {
+                    log_error("Failed to serialize notification payload: %s", json.error().c_str());
+                }
+            }
+
+            notification::deleted::PayloadLight light;
+            light = name;
+            // light notification
+            if (auto json = pack::json::serialize(light, pack::Option::WithDefaults)) {
+                if (auto send = sendStreamNotification(notification::deleted::Topic::Light, notification::deleted::Subject::Light, *json);
+                    !send) {
+                    log_error("Failed to send delete light notification: %s", send.error().c_str());
+                }
+            } else {
+                log_error("Failed to serialize notification light payload: %s", json.error().c_str());
+            }
         } else {
             auditError("Request DELETE asset id {} FAILED with error: {}", name, asset.error());
         }

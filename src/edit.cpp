@@ -3,6 +3,7 @@
 #include <asset/asset-configure-inform.h>
 #include <asset/asset-import.h>
 #include <asset/asset-manager.h>
+#include <asset/asset-notifications.h>
 #include <asset/csv.h>
 #include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
@@ -34,6 +35,8 @@ unsigned Edit::run()
         auditError("Request CREATE OR UPDATE asset FAILED: {}"_tr, "Asset id is not valid"_tr);
         throw rest::errors::RequestParamBad("id", *id, "Valid id"_tr);
     }
+
+    auto before = AssetManager::getDto(*id);
 
     std::string                 asset_json(m_request.body());
     cxxtools::SerializationInfo si;
@@ -151,6 +154,42 @@ unsigned Edit::run()
                 createMappings(assetIname, credentialList);
             } catch (const std::exception& e) {
                 log_error("Failed to update CAM: %s", e.what());
+            }
+
+            if (auto after = AssetManager::getDto(*id); before && after) {
+
+                notification::updated::PayloadFull full;
+                full.before                               = *before;
+                full.after                                = *after;
+                notification::updated::PayloadLight light = after->name;
+
+                // full notification
+                if (auto json = pack::json::serialize(full, pack::Option::WithDefaults)) {
+                    if (auto send = sendStreamNotification(notification::updated::Topic::Full, notification::updated::Subject::Full, *json);
+                        !send) {
+                        log_error("Failed to send update notification: %s", send.error().c_str());
+                    }
+                } else {
+                    log_error("Failed to serialize notification payload: %s", json.error().c_str());
+                }
+
+                // light notification
+                if (auto json = pack::json::serialize(light, pack::Option::WithDefaults)) {
+                    if (auto send =
+                            sendStreamNotification(notification::updated::Topic::Light, notification::updated::Subject::Light, *json);
+                        !send) {
+                        log_error("Failed to send update light notification: %s", send.error().c_str());
+                    }
+                } else {
+                    log_error("Failed to serialize notification light payload: %s", json.error().c_str());
+                }
+            } else {
+                if (!before) {
+                    log_error("Failed to get asset DTO: %s", before.error().message().c_str());
+                }
+                if (!after) {
+                    log_error("Failed to get asset DTO: %s", after.error().message().c_str());
+                }
             }
 
             return HTTP_OK;

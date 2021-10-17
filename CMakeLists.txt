@@ -51,6 +51,7 @@ etn_target(shared ${PROJECT_NAME}
         fty_common_messagebus
         fty_common
         fty_common_dto
+        fty-pack
     TARGET_DESTINATION /usr/lib/bios
 )
 
