@@ -140,36 +140,42 @@ struct Outlet
     db::asset::ExtAttrValue switchable;
 };
 
-// parse ext. attribute as "outlet.<number>.<property-name>
-// returns <outlet number, property name> (empty if inconsistent)
+// parse ext. attribute as "outlet.<id>.<property-name>
+// returns <outlet id, property name> (empty if inconsistent)
 
 static std::pair<std::string, std::string> getOutletNumberAndProperty(const std::string& extAttributeName)
 {
     std::pair<std::string, std::string> result; // empty
 
-    if (extAttributeName.find("outlet.") != 0)
+    if (extAttributeName.find("outlet.") != 0) {
         return result; // empty
-    auto dot1 = extAttributeName.find_first_of(".");
-    if (dot1 == std::string::npos)
-        return result; // empty
-    std::string aux = extAttributeName.substr(dot1 + 1);
-    auto dot2 = aux.find_first_of(".");
-    if (dot2 == std::string::npos)
-        return result; // empty
-
-    result.first = aux.substr(0, dot2); // number
-    result.second = aux.substr(dot2 + 1); // property name
-    return result;
-}
-
-// returns a ref. to existing Outlet entry in outlets
-
-static Outlet* findOrCreateOutlet(const std::string& key, std::map<std::string, Outlet>& outlets)
-{
-    if (outlets.find(key) == outlets.end()) {
-        outlets[key] = Outlet{}; // create
     }
-    return &outlets[key];
+    auto dot = extAttributeName.find_first_of(".");
+    if (dot == std::string::npos) {
+        return result; // empty
+    }
+    std::string aux = extAttributeName.substr(dot + 1);
+    dot = aux.find_first_of(".");
+    if (dot == std::string::npos) {
+        return result; // empty
+    }
+
+    auto number = aux.substr(0, dot);
+    auto propertyName = aux.substr(dot + 1);
+
+    try {
+        auto i = std::stoi(number);
+        if (i <= 0) {
+            return result; // inconsistent (>0 required)
+        }
+    }
+    catch (...) {
+        return result; // not an int
+    }
+
+    result.first = number;
+    result.second = propertyName;
+    return result;
 }
 
 static std::map<std::string, Outlet> collectOutlets(const db::asset::Attributes& ext)
@@ -177,34 +183,34 @@ static std::map<std::string, Outlet> collectOutlets(const db::asset::Attributes&
     std::map<std::string, Outlet> outlets;
 
     for (const auto& [key, value] : ext) {
-        // key match "outlet.<number>.<property-name>"?
-        // pair.first as number, .second as property-name
+        // key match "outlet.<id>.<property-name>"?
+        // pair.first as id, .second as property-name
         auto pair = getOutletNumberAndProperty(key);
-        if (pair.first.empty() || pair.second.empty())
+        if (pair.first.empty() || pair.second.empty()) {
             continue; // not an 'outlet' ext. attr
+        }
 
-        if (pair.first == "0")
-            continue; // inconsistent (>0 required)
+        auto outletId = pair.first;
+        if (outlets.find(outletId) == outlets.end()) {
+            outlets[outletId] = Outlet{}; // create
+            outlets[outletId].label.value = outletId; // default required
+            outlets[outletId].label.readOnly = true;
+        }
 
         if (pair.second == "label") {
-            auto outlet = findOrCreateOutlet(pair.first, outlets);
-            outlet->label = value;
+            outlets[outletId].label = value;
         }
         else if (pair.second == "group") {
-            auto outlet = findOrCreateOutlet(pair.first, outlets);
-            outlet->group = value;
+            outlets[outletId].group = value;
         }
         else if (pair.second == "type") {
-            auto outlet = findOrCreateOutlet(pair.first, outlets);
-            outlet->type = value;
+            outlets[outletId].type = value;
         }
         else if (pair.second == "name") {
-            auto outlet = findOrCreateOutlet(pair.first, outlets);
-            outlet->name = value;
+            outlets[outletId].name = value;
         }
         else if (pair.second == "switchable") {
-            auto outlet = findOrCreateOutlet(pair.first, outlets);
-            outlet->switchable = value;
+            outlets[outletId].switchable = value;
         }
     }
 
