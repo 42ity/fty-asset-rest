@@ -57,7 +57,7 @@ etn_target(shared ${PROJECT_NAME}
 
 ########################################################################################################################
 
-# discovery.xml for tntnet
+# mappings for tntnet
 etn_configure_file(
     conf/53_assets.xml.in
 

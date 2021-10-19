@@ -136,66 +136,81 @@ struct Outlet
     db::asset::ExtAttrValue label;
     db::asset::ExtAttrValue type;
     db::asset::ExtAttrValue group;
+    db::asset::ExtAttrValue name;
+    db::asset::ExtAttrValue switchable;
 };
 
-static std::string getOutletNumber(const std::string& extAttributeName)
+// parse ext. attribute as "outlet.<id>.<property-name>
+// returns <outlet id, property name> (empty if inconsistent)
+
+static std::pair<std::string, std::string> getOutletNumberAndProperty(const std::string& extAttributeName)
 {
-    auto        dot1    = extAttributeName.find_first_of(".");
-    std::string oNumber = extAttributeName.substr(dot1 + 1);
-    auto        dot2    = oNumber.find_first_of(".");
-    oNumber             = oNumber.substr(0, dot2);
-    return oNumber;
+    std::pair<std::string, std::string> result; // empty
+
+    if (extAttributeName.find("outlet.") != 0) {
+        return result; // empty
+    }
+    auto dot = extAttributeName.find_first_of(".");
+    if (dot == std::string::npos) {
+        return result; // empty
+    }
+    std::string aux = extAttributeName.substr(dot + 1);
+    dot = aux.find_first_of(".");
+    if (dot == std::string::npos) {
+        return result; // empty
+    }
+
+    auto number = aux.substr(0, dot);
+    auto propertyName = aux.substr(dot + 1);
+
+    try {
+        auto i = std::stoi(number);
+        if (i <= 0) {
+            return result; // inconsistent (>0 required)
+        }
+    }
+    catch (...) {
+        return result; // not an int
+    }
+
+    result.first = number;
+    result.second = propertyName;
+    return result;
 }
 
 static std::map<std::string, Outlet> collectOutlets(const db::asset::Attributes& ext)
 {
-    static std::regex outletLabelRex("^outlet\\.[0-9][0-9]*\\.label$");
-    static std::regex outletGroupRex("^outlet\\.[0-9][0-9]*\\.group$");
-    static std::regex outletTypeRex("^outlet\\.[0-9][0-9]*\\.type$");
-    static std::regex outletSwitchable("^outlet\\.[0-9][0-9]*\\.switchable");
-
     std::map<std::string, Outlet> outlets;
 
     for (const auto& [key, value] : ext) {
-        if (key.find("outlet.") != 0) {
-            continue;
+        // key match "outlet.<id>.<property-name>"?
+        // pair.first as id, .second as property-name
+        auto pair = getOutletNumberAndProperty(key);
+        if (pair.first.empty() || pair.second.empty()) {
+            continue; // not an 'outlet' ext. attr
         }
 
-        if (std::regex_match(key, outletLabelRex)) {
-            auto   oNumber = getOutletNumber(key);
-            Outlet out;
-            out.label.value    = key;
-            out.label.readOnly = value.readOnly;
-            outlets[oNumber]   = out;
-            continue;
-        } else if (std::regex_match(key, outletGroupRex)) {
-            auto   oNumber = getOutletNumber(key);
-            Outlet out;
-            out.group.value    = key;
-            out.group.readOnly = value.readOnly;
-            outlets[oNumber]   = out;
-            continue;
-        } else if (std::regex_match(key, outletTypeRex)) {
-            auto   oNumber = getOutletNumber(key);
-            Outlet out;
-            out.type.value    = key;
-            out.type.readOnly = value.readOnly;
-            outlets[oNumber]  = out;
-            continue;
-        } else if (std::regex_match(key, outletSwitchable)) {
-            auto oNumber     = getOutletNumber(key);
-            outlets[oNumber] = {};
-            continue;
-        } else if (key == "outlet.switchable") {
-            if (!outlets.count("0")) {
-                outlets["0"] = {};
-                continue;
-            }
-        } else if (key == "outlet.label") {
-            Outlet out;
-            out.label.value    = key;
-            out.label.readOnly = value.readOnly;
-            outlets["0"]       = out;
+        auto outletId = pair.first;
+        if (outlets.find(outletId) == outlets.end()) {
+            outlets[outletId] = Outlet{}; // create
+            outlets[outletId].label.value = outletId; // default required
+            outlets[outletId].label.readOnly = true;
+        }
+
+        if (pair.second == "label") {
+            outlets[outletId].label = value;
+        }
+        else if (pair.second == "group") {
+            outlets[outletId].group = value;
+        }
+        else if (pair.second == "type") {
+            outlets[outletId].type = value;
+        }
+        else if (pair.second == "name") {
+            outlets[outletId].name = value;
+        }
+        else if (pair.second == "switchable") {
+            outlets[outletId].switchable = value;
         }
     }
 
@@ -223,6 +238,7 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
     asset.status   = info->status;
     asset.priority = fmt::format("P{}", info->priority);
     asset.type     = info->typeName;
+
     if (info->parentId > 0) {
         auto location = db::asset::idToNameExtName(conn, info->parentId);
         if (!location) {
@@ -301,14 +317,16 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
     for (const auto& [oNumber, outlet] : outlets) {
         AssetDetail::OutletList& list = asset.outlets.append(oNumber);
 
+        // ensure outlet label is defined (required)
         {
             auto& out = list.append();
             out.name  = "label";
             if (!outlet.label.value.empty()) {
-                out.value    = outlet.label.value;
+                out.value = outlet.label.value;
                 out.readOnly = convert<std::string>(outlet.label.readOnly);
-            } else {
-                out.value    = oNumber;
+            }
+            else {
+                out.value = oNumber;
                 out.readOnly = "true";
             }
         }
@@ -319,12 +337,23 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
             out.value    = outlet.group.value;
             out.readOnly = convert<std::string>(outlet.group.readOnly);
         }
-
         if (!outlet.type.value.empty()) {
             auto& out    = list.append();
             out.name     = "type";
             out.value    = outlet.type.value;
             out.readOnly = convert<std::string>(outlet.type.readOnly);
+        }
+        if (!outlet.name.value.empty()) {
+            auto& out    = list.append();
+            out.name     = "name";
+            out.value    = outlet.name.value;
+            out.readOnly = convert<std::string>(outlet.name.readOnly);
+        }
+        if (!outlet.switchable.value.empty()) {
+            auto& out    = list.append();
+            out.name     = "switchable";
+            out.value    = outlet.switchable.value;
+            out.readOnly = convert<std::string>(outlet.switchable.readOnly);
         }
     }
 }
