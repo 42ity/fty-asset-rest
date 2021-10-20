@@ -141,41 +141,51 @@ struct Outlet
 };
 
 // parse ext. attribute as "outlet.<id>.<property-name>
+// with exceptions for master outlet (ups/epdu)
 // returns <outlet id, property name> (empty if inconsistent)
 
-static std::pair<std::string, std::string> getOutletNumberAndProperty(const std::string& extAttributeName)
+static std::pair<std::string, std::string> getOutletIdAndProperty(const std::string& extAttributeName)
 {
-    std::pair<std::string, std::string> result; // empty
+    // exception: handle outlet.["id"|"switchable"|"label"] (ups/epdu)
+    // ZZZ assume master outletId is "0"
+    if (extAttributeName == "outlet.id") {
+        return {"0", "id"};
+    }
+    if (extAttributeName == "outlet.switchable") {
+        return {"0", "switchable"};
+    }
+    if (extAttributeName == "outlet.label") {
+        return {"0", "label"};
+    }
+    //
 
     if (extAttributeName.find("outlet.") != 0) {
-        return result; // empty
+        return {}; // empty
     }
     auto dot = extAttributeName.find_first_of(".");
     if (dot == std::string::npos) {
-        return result; // empty
+        return {}; // empty
     }
     std::string aux = extAttributeName.substr(dot + 1);
     dot = aux.find_first_of(".");
     if (dot == std::string::npos) {
-        return result; // empty
+        return {}; // empty
     }
 
-    auto number = aux.substr(0, dot);
+    auto outletId = aux.substr(0, dot);
     auto propertyName = aux.substr(dot + 1);
 
     try {
-        auto i = std::stoi(number);
+        auto i = std::stoi(outletId);
         if (i <= 0) {
-            return result; // inconsistent (>0 required)
+            return {}; // inconsistent (>0 required)
         }
     }
     catch (...) {
-        return result; // not an int
+        return {}; // not an int
     }
 
-    result.first = number;
-    result.second = propertyName;
-    return result;
+    return {outletId, propertyName};
 }
 
 static std::map<std::string, Outlet> collectOutlets(const db::asset::Attributes& ext)
@@ -184,32 +194,32 @@ static std::map<std::string, Outlet> collectOutlets(const db::asset::Attributes&
 
     for (const auto& [key, value] : ext) {
         // key match "outlet.<id>.<property-name>"?
-        // pair.first as id, .second as property-name
-        auto pair = getOutletNumberAndProperty(key);
-        if (pair.first.empty() || pair.second.empty()) {
-            continue; // not an 'outlet' ext. attr
+        auto pair = getOutletIdAndProperty(key);
+        auto outletId = pair.first;
+        auto propertyName = pair.second;
+        if (outletId.empty() || propertyName.empty()) {
+            continue; // don't match
         }
 
-        auto outletId = pair.first;
         if (outlets.find(outletId) == outlets.end()) {
             outlets[outletId] = Outlet{}; // create
             outlets[outletId].label.value = outletId; // default required
             outlets[outletId].label.readOnly = true;
         }
 
-        if (pair.second == "label") {
+        if (propertyName == "label") {
             outlets[outletId].label = value;
         }
-        else if (pair.second == "group") {
+        else if (propertyName == "group") {
             outlets[outletId].group = value;
         }
-        else if (pair.second == "type") {
+        else if (propertyName == "type") {
             outlets[outletId].type = value;
         }
-        else if (pair.second == "name") {
+        else if (propertyName == "name") {
             outlets[outletId].name = value;
         }
-        else if (pair.second == "switchable") {
+        else if (propertyName == "switchable") {
             outlets[outletId].switchable = value;
         }
     }
@@ -315,6 +325,11 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
     }
 
     for (const auto& [oNumber, outlet] : outlets) {
+        // exception: ignore outlet "0" for epdu (not a physical outlet)
+        if ((oNumber == "0") && (asset.subType == "epdu")) {
+            continue;
+        }
+
         AssetDetail::OutletList& list = asset.outlets.append(oNumber);
 
         // ensure outlet label is defined (required)
