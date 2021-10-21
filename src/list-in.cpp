@@ -324,6 +324,15 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
         attr.append("read_only", convert<std::string>(value.readOnly));
     }
 
+    // exception: ensure that sts device have at least one outlet (main)
+    if ((outlets.size() == 0) && (asset.subType == "sts")) {
+        outlets["0"] = Outlet{};
+        outlets["0"].name.value = "0";
+        outlets["0"].name.readOnly = true;
+        outlets["0"].label.value = "Main";
+        outlets["0"].label.readOnly = true;
+    }
+
     for (const auto& [oNumber, outlet] : outlets) {
         // exception: ignore outlet "0" for epdu (not a physical outlet)
         if ((oNumber == "0") && (asset.subType == "epdu")) {
