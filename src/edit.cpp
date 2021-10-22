@@ -66,25 +66,6 @@ unsigned Edit::run()
         throw rest::errors::Internal(e.what());
     }
 
-    try {
-        fty::FullAsset asset(si);
-        si >>= asset;
-
-        if (asset.isPowerAsset() && asset.getStatusString() == "active") {
-            if (!activation::isActivable(asset)) {
-                throw std::runtime_error("Asset cannot be activated"_tr);
-            }
-            if (asset.getStatusString() == "active") {
-                activation::activate(asset);
-            } else {
-                activation::deactivate(asset);
-            }
-        }
-    } catch (const std::exception& e) {
-        auditError("Request CREATE OR UPDATE asset id {} FAILED"_tr, *id);
-        throw rest::errors::LicensingErr(e.what());
-    }
-
     CsvMap cm;
     try {
         cm = CsvMap_from_serialization_info(si);
@@ -190,6 +171,25 @@ unsigned Edit::run()
                 if (!after) {
                     log_error("Failed to get asset DTO: %s", after.error().message().c_str());
                 }
+            }
+
+            try {
+                fty::FullAsset asset(si);
+                si >>= asset;
+
+                if (asset.getTypeString() == "device") {
+                    if (asset.getStatusString() == "active") {
+                        if (!activation::isActivable(asset)) {
+                            throw std::runtime_error("Asset cannot be activated"_tr);
+                        }
+                        activation::activate(asset);
+                    } else {
+                        activation::deactivate(asset);
+                    }
+                }
+            } catch (const std::exception& e) {
+                auditError("Request CREATE OR UPDATE asset id {} FAILED"_tr, *id);
+                throw rest::errors::LicensingErr(e.what());
             }
 
             return HTTP_OK;
