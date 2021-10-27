@@ -54,7 +54,7 @@ unsigned List::run()
         }
     }
 
-    std::string order;
+    std::string order = "name";
     OrderDir    dir = OrderDir::Asc;
 
     if (orderBy) {
