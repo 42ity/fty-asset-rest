@@ -478,6 +478,9 @@ unsigned ListIn::run()
     }
 
     db::asset::select::Order order;
+    order.field = "name";
+    order.dir = db::asset::select::Order::Dir::Asc;
+
     if (auto by = m_request.queryArg<std::string>("orderBy")) {
         order.field = *by;
     }
