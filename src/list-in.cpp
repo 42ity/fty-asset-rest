@@ -111,7 +111,7 @@ static Assets assetsInContainer(
             asset.id      = row.get("name");
             asset.name    = row.get("extName");
             asset.type    = row.get("typeName");
-            asset.subType = row.get("subTypeName");
+            asset.subType = persist::subtypeid_to_subtype(row.get<uint16_t>("subTypeId"));
         }
     };
 
@@ -268,7 +268,7 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
                 ext.erase("type");
             }
         } else {
-            subTypeName = info->subtypeName;
+            subTypeName =  persist::subtypeid_to_subtype(info->subtypeId);
         }
         if (subTypeName == "N_A") {
             subTypeName = "";
