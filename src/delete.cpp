@@ -53,7 +53,8 @@ unsigned Delete::deleteOneAsset(const std::string& idStr)
         logError(res.error());
         std::string reason = "Asset is in use, remove children/power source links first."_tr;
         auditError("Request DELETE asset id {} FAILED"_tr, idStr);
-        throw rest::errors::DataConflict(idStr, reason);
+        auto extName = db::nameToExtName(idStr);
+        throw rest::errors::DataConflict(!extName ? idStr : *extName, reason);
     }
 
     std::string agent_name = generateMlmClientId("web.asset_delete");
