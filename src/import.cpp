@@ -39,7 +39,7 @@ static void s_update_all()
         r = mlm_client_sendto(client, AGENT_FTY_ASSET, "REPUBLISH", nullptr, 5000, &msg);
         zmsg_destroy(&msg);
         if (r != 0)
-            { logError("sendto %s REPUBLISH failed.", AGENT_FTY_ASSET); break; }
+            { logError("sendto {} REPUBLISH failed.", AGENT_FTY_ASSET); break; }
         break;
     } while(0);
 
