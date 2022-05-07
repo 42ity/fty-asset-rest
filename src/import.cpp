@@ -40,6 +40,7 @@ static void s_update_all()
         zmsg_destroy(&msg);
         if (r != 0)
             { logError("sendto {} REPUBLISH failed.", AGENT_FTY_ASSET); break; }
+        zclock_sleep(2000); // ensure that everything was send before we destroy the client
         break;
     } while(0);
 
