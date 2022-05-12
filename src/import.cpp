@@ -1,7 +1,14 @@
 #include "import.h"
 #include <asset/asset-manager.h>
+#include <asset/asset-configure-inform.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
+
+#include <fty_log.h>
+#include <fty_common.h>
+#include <fty_common_mlm_utils.h>
+#include <zmq.h>
+#include <malamute.h>
 
 namespace fty::asset {
 
@@ -13,6 +20,32 @@ struct Result : public pack::Node
     using pack::Node::Node;
     META(Result, okLines, errors);
 };
+
+static void s_update_all()
+{
+    logInfo("import-csv update all");
+
+    mlm_client_t* client = nullptr;
+    std::string agentName{generateMlmClientId("web.import-csv")};
+
+    do {
+        client = mlm_client_new();
+        if (!client)
+            { logError("mlm_client_new () failed."); break; }
+        int r = mlm_client_connect(client, MLM_ENDPOINT, 1000, agentName.c_str());
+        if (r == -1)
+            { logError("mlm_client_connect () failed."); break; }
+        zmsg_t* msg = zmsg_new();
+        r = mlm_client_sendto(client, AGENT_FTY_ASSET, "REPUBLISH", nullptr, 5000, &msg);
+        zmsg_destroy(&msg);
+        if (r != 0)
+            { logError("sendto {} REPUBLISH failed.", AGENT_FTY_ASSET); break; }
+        zclock_sleep(2000); // ensure that everything was send before we destroy the client
+        break;
+    } while(0);
+
+    mlm_client_destroy(&client);
+}
 
 unsigned RestImport::run()
 {
@@ -47,6 +80,12 @@ unsigned RestImport::run()
                 result.errors.append(err);
             }
         }
+
+        logInfo("import-csv, result.okLines: {}", result.okLines);
+        if (result.okLines != 0) {
+            s_update_all();
+        }
+
         m_reply << *pack::json::serialize(result);
         return HTTP_OK;
     } else {

@@ -52,6 +52,10 @@ etn_target(shared ${PROJECT_NAME}
         fty_common
         fty_common_dto
         fty-pack
+        fty_common_logging
+        fty_common_mlm
+        czmq
+        mlm
     TARGET_DESTINATION /usr/lib/bios
 )
 
