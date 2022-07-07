@@ -324,18 +324,32 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
         attr.append("read_only", convert<std::string>(value.readOnly));
     }
 
-    // exception: ensure that sts device have at least one outlet (main)
+    // exception: construct all missing outlets for sts device
     if ((outlets.size() == 0) && (asset.subType == "sts")) {
-        outlets["0"] = Outlet{};
-        outlets["0"].name.value = "0";
-        outlets["0"].name.readOnly = true;
-        outlets["0"].label.value = "Main";
-        outlets["0"].label.readOnly = true;
+        // get outlet.count
+        if (auto it = ext.find("outlet.count"); it != ext.end()) {
+            int outletCount = std::atoi(it->second.value.c_str());
+            // construct each missing outlet, e.g for N outlets:
+            // "outlets":{
+            //  "1":[{name: "label", value: "Outlet 1", read_only: "true"}, {name: "name", value: "Outlet 1", read_only: "true"}],
+            //   ...
+            //  "N":[{name: "label", value: "Outlet N", read_only: "true"}, {name: "name", value: "Outlet N", read_only: "true"}],
+            // }
+            for (int iOutlet = 1; iOutlet <= outletCount; iOutlet ++) {
+                auto outletId = std::to_string(iOutlet);
+                auto outletName = std::string("Outlet ") + outletId;
+                outlets[outletId] = Outlet{};
+                outlets[outletId].name.value = outletName;
+                outlets[outletId].name.readOnly = true;
+                outlets[outletId].label.value = outletName;
+                outlets[outletId].label.readOnly = true;
+            }
+        }
     }
 
     for (const auto& [oNumber, outlet] : outlets) {
-        // exception: ignore outlet "0" for epdu (not a physical outlet)
-        if ((oNumber == "0") && (asset.subType == "epdu")) {
+        // exception: ignore outlet "0" for epdu and sts (not a physical outlet)
+        if ((oNumber == "0") && (asset.subType == "epdu"  || asset.subType == "sts")) {
             continue;
         }
 
