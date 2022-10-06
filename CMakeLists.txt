@@ -13,8 +13,6 @@ find_package(fty-cmake PATHS ${CMAKE_BINARY_DIR}/fty-cmake)
 
 etn_target(shared ${PROJECT_NAME}
     SOURCES
-        conf/43_assets.xml.in
-
         src/read.cpp
         src/read.h
         src/create.cpp
@@ -38,24 +36,21 @@ etn_target(shared ${PROJECT_NAME}
         src/check-usize.cpp
         src/check-usize.h
     USES
-        fty-cmake-rest
         cxxtools
         tntnet
         tntdb
-        fty_common_rest
-        fty_shm
+        czmq
+        mlm
+        fty-cmake-rest
         fty-pack
         fty-asset
         fty-asset-libng
-        fty_proto
+        fty_common_rest
         fty_common_messagebus
         fty_common
         fty_common_dto
-        fty-pack
         fty_common_logging
         fty_common_mlm
-        czmq
-        mlm
     TARGET_DESTINATION /usr/lib/bios
 )
 
