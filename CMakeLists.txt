@@ -45,23 +45,24 @@ etn_target(shared ${PROJECT_NAME}
         fty-pack
         fty-asset
         fty-asset-libng
+        fty_asset_activator
+        fty_common
         fty_common_rest
         fty_common_messagebus
-        fty_common
         fty_common_dto
         fty_common_logging
-        fty_common_mlm
-    TARGET_DESTINATION /usr/lib/bios
+    TARGET_DESTINATION
+        ${CMAKE_INSTALL_PREFIX}/lib/bios
 )
 
 ########################################################################################################################
 
-# mappings for tntnet
+# mappings for /etc/tntnet
 etn_configure_file(
     conf/53_assets.xml.in
 
     TARGET      ${PROJECT_NAME}
-    DESTINATION /etc/tntnet/bios.d
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/tntnet/bios.d
 )
 
 ########################################################################################################################

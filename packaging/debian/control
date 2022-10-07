@@ -8,19 +8,17 @@ Build-Depends:
     libtntnet-dev,
     libcxxtools-dev,
     fty-cmake-dev,
-    fty-utils-dev,
     fty-cmake-rest-dev,
-    libfty-common-logging-dev,
-    libfty-pack-dev,
-    libfty-common-messagebus-dev,
-    libfty-common-rest-dev,
-    libfty-security-wallet-dev,
-    libfty-common-socket-dev,
-    libfty-common-dto-dev,
+    fty-utils-dev,
+    libfty-asset-dev,
     libfty-asset-activator-dev,
+    libfty-pack-dev,
+    libfty-security-wallet-dev,
     libfty-common-dev,
-    libfty-common-mlm-dev,
-    libfty-asset-dev
+    libfty-common-rest-dev,
+    libfty-common-messagebus-dev,
+    libfty-common-dto-dev,
+    libfty-common-logging-dev
 Standards-Version: 1.0.0
 Section: devel
 Priority: extra
