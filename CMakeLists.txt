@@ -57,12 +57,12 @@ etn_target(shared ${PROJECT_NAME}
 
 ########################################################################################################################
 
-# mappings for tntnet
+# mappings for /etc/tntnet
 etn_configure_file(
     conf/53_assets.xml.in
 
     TARGET      ${PROJECT_NAME}
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/tntnet/bios.d
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/tntnet/bios.d
 )
 
 ########################################################################################################################
