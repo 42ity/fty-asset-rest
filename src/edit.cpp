@@ -70,7 +70,7 @@ unsigned Edit::run()
         throw rest::errors::Internal(e.what());
     }
 
-    // IPMVAL-4513 Hotfix: protect concurent db access for drag and drog pdu in rack view
+    // IPMVAL-4513 Hotfix: protect concurent db access for drag and drop pdu in rack view
     std::lock_guard<std::mutex> lock(mutex);
 
     CsvMap cm;
