@@ -14,9 +14,13 @@
 #include <fty_common_asset.h>
 #include <fty_common_mlm.h>
 
+#include <mutex>
+
 namespace fty::asset {
 
 #define AGENT_ASSET_ACTIVATOR "etn-licensing-credits"
+
+static std::mutex mutex;
 
 unsigned Edit::run()
 {
@@ -65,6 +69,9 @@ unsigned Edit::run()
         auditError("Request CREATE OR UPDATE asset id {} FAILED"_tr, *id);
         throw rest::errors::Internal(e.what());
     }
+
+    // IPMVAL-4513 Hotfix: protect concurent db access for drag and drog pdu in rack view
+    std::lock_guard<std::mutex> lock(mutex);
 
     CsvMap cm;
     try {
