@@ -20,7 +20,7 @@ namespace fty::asset {
 
 #define AGENT_ASSET_ACTIVATOR "etn-licensing-credits"
 
-static std::mutex mutex;
+static std::mutex g_mutex;
 
 unsigned Edit::run()
 {
@@ -71,7 +71,7 @@ unsigned Edit::run()
     }
 
     // IPMVAL-4513 Hotfix: protect concurent db access for drag and drop pdu in rack view
-    std::lock_guard<std::mutex> lock(mutex);
+    std::lock_guard<std::mutex> lock(g_mutex);
 
     CsvMap cm;
     try {
