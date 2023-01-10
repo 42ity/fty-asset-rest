@@ -292,17 +292,6 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
         throw rest::errors::Internal(links.error());
     }
 
-    {
-        auto it = ext.find("logical_asset");
-        if (it != ext.end()) {
-            auto extname = db::asset::nameToExtName(conn, it->second.value);
-            if (!extname) {
-                throw rest::errors::Internal(extname.error());
-            }
-            ext["logical_asset"] = {*extname, it->second.readOnly};
-        }
-    }
-
     if (!info->assetTag.empty()) {
         auto& tag = asset.ext.append();
         tag.append("asset_tag", info->assetTag);
