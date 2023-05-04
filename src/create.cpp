@@ -22,10 +22,9 @@
 #include "create.h"
 #include <asset/asset-manager.h>
 #include <asset/asset-notifications.h>
-#include <cxxtools/jsondeserializer.h>
-#include <cxxtools/jsonserializer.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
+#include <fty_common_json.h>
 
 namespace fty::asset {
 
@@ -38,9 +37,7 @@ unsigned Create::run()
 
     cxxtools::SerializationInfo si;
     try {
-        std::stringstream          jsonIn(m_request.body());
-        cxxtools::JsonDeserializer deserializer(jsonIn);
-        deserializer.deserialize(si);
+        JSON::readFromString(m_request.body(), si);
     } catch (const std::exception& e) {
         auditError(e.what());
         throw rest::errors::Internal(e.what());

@@ -1,10 +1,10 @@
 #include "actions-get.h"
-#include "cxxtools/jsonserializer.h"
 #include <fty/rest/component.h>
 #include <fty_common_asset_types.h>
 #include <fty_common_dto.h>
 #include <fty_common_messagebus.h>
 #include <fty_common_mlm_utils.h>
+#include <fty_common_json.h>
 
 namespace fty::asset {
 
@@ -68,10 +68,7 @@ unsigned ActionsGet::run()
     }
 
     // Serialize reply.
-    std::stringstream        ss;
-    cxxtools::JsonSerializer serializer(ss);
-    serializer.serialize(replySi).finish();
-    m_reply << ss.str();
+    m_reply << JSON::writeToString(replySi, false);
 
     return HTTP_OK;
 }
