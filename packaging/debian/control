@@ -1,5 +1,5 @@
 Source: fty-asset-rest
-Maintainer: fty-asset-rest Developers <eatonproductfeedback@eaton.com>
+Maintainer: fty-asset-rest Developers <opensource@eaton.com>
 Build-Depends:
     cmake (>=3.0),
     debhelper (>= 9),
