@@ -41,10 +41,9 @@ unsigned Edit::run()
 
     auto before = AssetManager::getDto(*id);
 
-    std::string                 asset_json(m_request.body());
     cxxtools::SerializationInfo si;
     try {
-        JSON::readFromString(asset_json, si);
+        JSON::readFromString(m_request.body(), si);
         auto        si_id = si.findMember("id");
         std::string status;
         si.getMember("status") >>= status;
