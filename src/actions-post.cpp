@@ -1,12 +1,13 @@
 #include "actions-post.h"
 #include <asset/asset-db.h>
-#include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty_commands_dto.h>
 #include <fty_common_asset_types.h>
 #include <fty_common_messagebus.h>
 #include <fty_common_mlm_utils.h>
+#include <fty_common_json.h>
+#include <cxxtools/serializationinfo.h>
 
 namespace fty::asset {
 
@@ -39,9 +40,8 @@ unsigned ActionsPost::run()
     dto::commands::PerformCommandsQueryDto commandList;
 
     try {
-        std::stringstream          input(m_request.body(), std::ios_base::in);
-        cxxtools::JsonDeserializer deserializer(input);
-        deserializer.deserialize(si);
+        JSON::readFromString(m_request.body(), si);
+
         if (si.category() != cxxtools::SerializationInfo::Category::Array) {
             throw std::runtime_error("expected array of objects");
         }

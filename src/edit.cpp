@@ -5,7 +5,6 @@
 #include <asset/asset-manager.h>
 #include <asset/asset-notifications.h>
 #include <asset/csv.h>
-#include <cxxtools/jsondeserializer.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty_common.h>
@@ -42,12 +41,9 @@ unsigned Edit::run()
 
     auto before = AssetManager::getDto(*id);
 
-    std::string                 asset_json(m_request.body());
     cxxtools::SerializationInfo si;
     try {
-        std::stringstream          input(asset_json, std::ios_base::in);
-        cxxtools::JsonDeserializer deserializer(input);
-        deserializer.deserialize(si);
+        JSON::readFromString(m_request.body(), si);
         auto        si_id = si.findMember("id");
         std::string status;
         si.getMember("status") >>= status;
