@@ -7,6 +7,7 @@
 #include <fty_common_messagebus.h>
 #include <fty_common_mlm_utils.h>
 #include <fty_common_json.h>
+#include <cxxtools/serializationinfo.h>
 
 namespace fty::asset {
 

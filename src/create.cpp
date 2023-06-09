@@ -25,6 +25,7 @@
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
 #include <fty_common_json.h>
+#include <cxxtools/serializationinfo.h>
 
 namespace fty::asset {
 
