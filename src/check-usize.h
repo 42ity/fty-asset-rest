@@ -1,6 +1,4 @@
 /*  ====================================================================================================================
-    read.h - Implementation of GET operation on any asset
-
     Copyright (C) 2014 - 2020 Eaton
 
     This program is free software; you can redistribute it and/or modify
@@ -18,9 +16,9 @@
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
     ====================================================================================================================
 */
+
 #pragma once
 #include <fty/rest/runner.h>
-
 
 namespace fty::asset {
 
