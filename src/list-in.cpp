@@ -27,6 +27,7 @@
 #include <fty_common_db_connection.h>
 #include <pack/node.h>
 
+
 namespace fty::asset {
 
 // =========================================================================================================================================
@@ -98,9 +99,9 @@ using AssetDetails = pack::ObjectList<AssetDetail>;
 
 // =========================================================================================================================================
 
-static Assets assetsInContainer(
+static Assets assetsInContainers(
     fty::db::Connection&             conn,
-    uint32_t                         container,
+    const std::vector<uint32_t>&     containerIds,
     const db::asset::select::Filter& filter,
     const db::asset::select::Order&  order,
     const std::vector<std::string>&  capabilities)
@@ -133,8 +134,8 @@ static Assets assetsInContainer(
         }
     };
 
-    if (container) {
-        auto list = db::asset::select::itemsByContainer(conn, container, func, filter, order);
+    if (!containerIds.empty()) {
+        auto list = db::asset::select::itemsByContainers(conn, containerIds, func, filter, order);
         if (!list) {
             throw rest::errors::Internal(list.error());
         }
@@ -405,19 +406,27 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
 
 // =========================================================================================================================================
 
-uint32_t ListIn::containerId() const
+std::vector<uint32_t> ListIn::containerIds() const
 {
-    auto id = m_request.queryArg<std::string>("in");
-
-    if (!id || id->empty()) {
-        return 0;
+    auto in = m_request.queryArg<std::string>("in");
+    if (!in || in->empty()) {
+        return {};
     }
 
-    if (auto ret = checkElementIdentifier("in", *id)) {
-        return *ret;
-    } else {
-        throw rest::errors::RequestParamBad("in", *id, "valid container id");
+    std::vector<uint32_t> ret; //ids
+
+    // get asset ids from inames (in)
+    std::vector<std::string> inames = split(*in, ",");
+    for (const auto& iname : inames) {
+        if (auto id = checkElementIdentifier("in", iname)) {
+            ret.push_back(*id);
+        }
+        else {
+            throw rest::errors::RequestParamBad("in", iname, "valid container id");
+        }
     }
+
+    return ret;
 }
 
 std::vector<uint16_t> ListIn::types() const
@@ -509,8 +518,7 @@ unsigned ListIn::run()
         order.dir = *dir == "ASC" ? db::asset::select::Order::Dir::Asc : db::asset::select::Order::Dir::Desc;
     }
 
-
-    auto assets = assetsInContainer(conn, containerId(), flt, order, capabilities());
+    auto assets = assetsInContainers(conn, containerIds(), flt, order, capabilities());
 
     if (details && *details) {
         AssetDetails list;

@@ -31,7 +31,7 @@ public:
     unsigned run() override;
 
 private:
-    uint32_t                 containerId() const;
+    std::vector<uint32_t>    containerIds() const;
     std::vector<uint16_t>    types() const;
     std::vector<uint16_t>    subTypes() const;
     std::vector<std::string> capabilities() const;
