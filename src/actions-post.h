@@ -1,6 +1,4 @@
 /*  ====================================================================================================================
-    create.h - Implementation of POST (create) operation on any asset
-
     Copyright (C) 2014 - 2020 Eaton
 
     This program is free software; you can redistribute it and/or modify

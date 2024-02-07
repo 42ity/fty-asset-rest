@@ -1,3 +1,22 @@
+/*  ========================================================================================================================================
+    Copyright (C) 2014 - 2020 Eaton
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    ========================================================================================================================================
+*/
+
 #include "list-in.h"
 #include <asset/asset-db2.h>
 #include <asset/asset-helpers.h>
@@ -80,9 +99,9 @@ using AssetDetails = pack::ObjectList<AssetDetail>;
 
 // =========================================================================================================================================
 
-static Assets assetsInContainer(
+static Assets assetsInContainers(
     fty::db::Connection&             conn,
-    uint32_t                         container,
+    const std::vector<uint32_t>&     containerIds,
     const db::asset::select::Filter& filter,
     const db::asset::select::Order&  order,
     const std::vector<std::string>&  capabilities)
@@ -115,8 +134,8 @@ static Assets assetsInContainer(
         }
     };
 
-    if (container) {
-        auto list = db::asset::select::itemsByContainer(conn, container, func, filter, order);
+    if (!containerIds.empty()) {
+        auto list = db::asset::select::itemsByContainers(conn, containerIds, func, filter, order);
         if (!list) {
             throw rest::errors::Internal(list.error());
         }
@@ -387,19 +406,27 @@ static void fetchFullInfo(fty::db::Connection& conn, AssetDetail& asset, const s
 
 // =========================================================================================================================================
 
-uint32_t ListIn::containerId() const
+std::vector<uint32_t> ListIn::containerIds() const
 {
-    auto id = m_request.queryArg<std::string>("in");
-
-    if (!id || id->empty()) {
-        return 0;
+    auto in = m_request.queryArg<std::string>("in");
+    if (!in || in->empty()) {
+        return {};
     }
 
-    if (auto ret = checkElementIdentifier("in", *id)) {
-        return *ret;
-    } else {
-        throw rest::errors::RequestParamBad("in", *id, "valid container id");
+    std::vector<uint32_t> ret; //ids
+
+    // get asset ids from inames (in)
+    std::vector<std::string> inames = split(*in, ",");
+    for (const auto& iname : inames) {
+        if (auto id = checkElementIdentifier("in", iname)) {
+            ret.push_back(*id);
+        }
+        else {
+            throw rest::errors::RequestParamBad("in", iname, "valid container id");
+        }
     }
+
+    return ret;
 }
 
 std::vector<uint16_t> ListIn::types() const
@@ -491,8 +518,7 @@ unsigned ListIn::run()
         order.dir = *dir == "ASC" ? db::asset::select::Order::Dir::Asc : db::asset::select::Order::Dir::Desc;
     }
 
-
-    auto assets = assetsInContainer(conn, containerId(), flt, order, capabilities());
+    auto assets = assetsInContainers(conn, containerIds(), flt, order, capabilities());
 
     if (details && *details) {
         AssetDetails list;

@@ -1,6 +1,4 @@
 /*  ====================================================================================================================
-    read.h - Implementation of GET operation on any asset
-
     Copyright (C) 2014 - 2020 Eaton
 
     This program is free software; you can redistribute it and/or modify

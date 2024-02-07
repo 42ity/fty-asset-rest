@@ -1,6 +1,4 @@
 /*  ========================================================================================================================================
-    read.h - Implementation of GET operation on any asset
-
     Copyright (C) 2014 - 2020 Eaton
 
     This program is free software; you can redistribute it and/or modify
@@ -33,7 +31,7 @@ public:
     unsigned run() override;
 
 private:
-    uint32_t                 containerId() const;
+    std::vector<uint32_t>    containerIds() const;
     std::vector<uint16_t>    types() const;
     std::vector<uint16_t>    subTypes() const;
     std::vector<std::string> capabilities() const;
