@@ -17,13 +17,15 @@
     ====================================================================================================================
 */
 
+#include <cxxtools/log.h> // tntnet13/cxxtools10 : fix missed cxxtools::LogConfiguration ref.
+
 #include "create.h"
 #include <asset/asset-manager.h>
 #include <asset/asset-notifications.h>
 #include <fty/rest/audit-log.h>
 #include <fty/rest/component.h>
-#include <fty_common_json.h>
 #include <cxxtools/serializationinfo.h>
+#include <fty_common_json.h>
 
 namespace fty::asset {
 
