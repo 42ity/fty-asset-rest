@@ -17,6 +17,8 @@
     ========================================================================================================================================
 */
 
+#include <cxxtools/log.h> // tntnet13/cxxtools10 : fix missed cxxtools::LogConfiguration ref.
+
 #include "import.h"
 #include <asset/asset-manager.h>
 #include <asset/asset-configure-inform.h>
