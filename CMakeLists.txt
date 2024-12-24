@@ -52,15 +52,16 @@ etn_target(shared ${PROJECT_NAME}
         fty_common_dto
         fty_common_logging
     TARGET_DESTINATION
-        ${CMAKE_INSTALL_PREFIX}/lib/bios
+        ${CMAKE_INSTALL_LIBDIR}
 )
+
+set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 
 ########################################################################################################################
 
 # mappings for /etc/tntnet
 etn_configure_file(
     conf/53_assets.xml.in
-
     TARGET      ${PROJECT_NAME}
     DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/tntnet/bios.d
 )
